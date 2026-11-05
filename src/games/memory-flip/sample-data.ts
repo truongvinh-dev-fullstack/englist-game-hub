@@ -1,0 +1,141 @@
+import type { MemoryFlipQuestion } from "@/lib/validations/content/memory-flip";
+
+const TOPIC_OFFICE_ID = "00000000-0000-0000-0000-000000000001";
+
+export const MEMORY_FLIP_SAMPLE_QUESTIONS: MemoryFlipQuestion[] = [
+  {
+    game_type: "memory-flip",
+    topic_id: TOPIC_OFFICE_ID,
+    difficulty: "A1",
+    skill: "vocabulary",
+    prompt: "Lật các thẻ bài để ghép 4 cặp từ vựng công sở thông dụng.",
+    explanation_vi: "Các cặp từ vựng cốt lõi: Colleague (Đồng nghiệp), Deadline (Hạn chót), Meeting (Cuộc họp), Schedule (Lịch trình).",
+    concept_tags: ["office", "workflow"],
+    status: "published",
+    version: 1,
+    public_payload: {
+      pairsCount: 4,
+      cards: [
+        { id: "c1", pairId: "p1", content: "Colleague", type: "en" },
+        { id: "c2", pairId: "p3", content: "Meeting", type: "en" },
+        { id: "c3", pairId: "p2", content: "Hạn chót", type: "vi" },
+        { id: "c4", pairId: "p4", content: "Lịch trình", type: "vi" },
+        { id: "c5", pairId: "p1", content: "Đồng nghiệp", type: "vi" },
+        { id: "c6", pairId: "p2", content: "Deadline", type: "en" },
+        { id: "c7", pairId: "p4", content: "Schedule", type: "en" },
+        { id: "c8", pairId: "p3", content: "Cuộc họp", type: "vi" },
+      ],
+    },
+    private_solution: {
+      pairs: [
+        { pairId: "p1", en: "Colleague", vi: "Đồng nghiệp" },
+        { pairId: "p2", en: "Deadline", vi: "Hạn chót" },
+        { pairId: "p3", en: "Meeting", vi: "Cuộc họp" },
+        { pairId: "p4", en: "Schedule", vi: "Lịch trình" },
+      ],
+    },
+  },
+  {
+    game_type: "memory-flip",
+    topic_id: TOPIC_OFFICE_ID,
+    difficulty: "A2",
+    skill: "vocabulary",
+    prompt: "Lật các thẻ bài để ghép 6 cặp thuật ngữ giao tiếp công việc.",
+    explanation_vi: "Thuật ngữ chuyên môn: Negotiation (Đàm phán), Feedback (Nhận xét góp ý), Contract (Hợp đồng), Presentation (Thuyết trình), Budget (Ngân sách), Proposal (Bản đề xuất).",
+    concept_tags: ["business", "professional-terms"],
+    status: "published",
+    version: 1,
+    public_payload: {
+      pairsCount: 6,
+      cards: [
+        { id: "c101", pairId: "p1", content: "Negotiation", type: "en" },
+        { id: "c102", pairId: "p5", content: "Ngân sách", type: "vi" },
+        { id: "c103", pairId: "p2", content: "Feedback", type: "en" },
+        { id: "c104", pairId: "p3", content: "Contract", type: "en" },
+        { id: "c105", pairId: "p6", content: "Proposal", type: "en" },
+        { id: "c106", pairId: "p1", content: "Đàm phán", type: "vi" },
+        { id: "c107", pairId: "p4", content: "Presentation", type: "en" },
+        { id: "c108", pairId: "p2", content: "Nhận xét góp ý", type: "vi" },
+        { id: "c109", pairId: "p5", content: "Budget", type: "en" },
+        { id: "c110", pairId: "p3", content: "Hợp đồng", type: "vi" },
+        { id: "c111", pairId: "p4", content: "Thuyết trình", type: "vi" },
+        { id: "c112", pairId: "p6", content: "Bản đề xuất", type: "vi" },
+      ],
+    },
+    private_solution: {
+      pairs: [
+        { pairId: "p1", en: "Negotiation", vi: "Đàm phán" },
+        { pairId: "p2", en: "Feedback", vi: "Nhận xét góp ý" },
+        { pairId: "p3", en: "Contract", vi: "Hợp đồng" },
+        { pairId: "p4", en: "Presentation", vi: "Thuyết trình" },
+        { pairId: "p5", en: "Budget", vi: "Ngân sách" },
+        { pairId: "p6", en: "Proposal", vi: "Bản đề xuất" },
+      ],
+    },
+  },
+  {
+    game_type: "memory-flip",
+    topic_id: TOPIC_OFFICE_ID,
+    difficulty: "A1",
+    skill: "vocabulary",
+    prompt: "Lật các thẻ bài để ghép 4 cặp từ vựng thiết bị và đồ dùng văn phòng.",
+    explanation_vi: "Thiết bị văn phòng: Laptop (Máy tính xách tay), Printer (Máy in), Office (Văn phòng), Document (Tài liệu).",
+    concept_tags: ["office", "equipment"],
+    status: "published",
+    version: 1,
+    public_payload: {
+      pairsCount: 4,
+      cards: [
+        { id: "c201", pairId: "p1", content: "Laptop", type: "en" },
+        { id: "c202", pairId: "p2", content: "Máy in", type: "vi" },
+        { id: "c203", pairId: "p3", content: "Office", type: "en" },
+        { id: "c204", pairId: "p4", content: "Tài liệu", type: "vi" },
+        { id: "c205", pairId: "p1", content: "Máy tính xách tay", type: "vi" },
+        { id: "c206", pairId: "p2", content: "Printer", type: "en" },
+        { id: "c207", pairId: "p4", content: "Document", type: "en" },
+        { id: "c208", pairId: "p3", content: "Văn phòng", type: "vi" },
+      ],
+    },
+    private_solution: {
+      pairs: [
+        { pairId: "p1", en: "Laptop", vi: "Máy tính xách tay" },
+        { pairId: "p2", en: "Printer", vi: "Máy in" },
+        { pairId: "p3", en: "Office", vi: "Văn phòng" },
+        { pairId: "p4", en: "Document", vi: "Tài liệu" },
+      ],
+    },
+  },
+  {
+    game_type: "memory-flip",
+    topic_id: TOPIC_OFFICE_ID,
+    difficulty: "A1",
+    skill: "vocabulary",
+    prompt: "Lật các thẻ bài để ghép 4 cặp từ vựng trao đổi công việc hằng ngày.",
+    explanation_vi: "Giao tiếp công sở: Email (Thư điện tử), Message (Tin nhắn), Report (Báo cáo), Phone (Điện thoại).",
+    concept_tags: ["communication", "office"],
+    status: "published",
+    version: 1,
+    public_payload: {
+      pairsCount: 4,
+      cards: [
+        { id: "c301", pairId: "p1", content: "Email", type: "en" },
+        { id: "c302", pairId: "p2", content: "Tin nhắn", type: "vi" },
+        { id: "c303", pairId: "p3", content: "Report", type: "en" },
+        { id: "c304", pairId: "p4", content: "Điện thoại", type: "vi" },
+        { id: "c305", pairId: "p1", content: "Thư điện tử", type: "vi" },
+        { id: "c306", pairId: "p2", content: "Message", type: "en" },
+        { id: "c307", pairId: "p4", content: "Phone", type: "en" },
+        { id: "c308", pairId: "p3", content: "Báo cáo", type: "vi" },
+      ],
+    },
+    private_solution: {
+      pairs: [
+        { pairId: "p1", en: "Email", vi: "Thư điện tử" },
+        { pairId: "p2", en: "Message", vi: "Tin nhắn" },
+        { pairId: "p3", en: "Report", vi: "Báo cáo" },
+        { pairId: "p4", en: "Phone", vi: "Điện thoại" },
+      ],
+    },
+  },
+];
+

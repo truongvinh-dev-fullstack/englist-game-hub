@@ -1,0 +1,156 @@
+import type {
+  MemoryFlipPrivateSolution,
+  SentenceBuilderPrivateSolution,
+  ErrorDetectivePrivateSolution,
+  ListenChoosePrivateSolution,
+  RoleplayPrivateSolution,
+  AnyQuestion,
+} from "@/lib/validations/content";
+import type { AnswerFeedback } from "./types";
+
+export interface EvaluationInput {
+  question: AnyQuestion;
+  answer: unknown;
+  explanationVi: string;
+}
+
+export function evaluateMemoryFlip(
+  solution: MemoryFlipPrivateSolution,
+  answer: unknown,
+  explanation: string
+): AnswerFeedback {
+  const typedAnswer = (typeof answer === "object" && answer !== null)
+    ? (answer as { isBoardCleared?: boolean; matchedPairsCount?: number })
+    : {};
+
+  const isCorrect = Boolean(typedAnswer.isBoardCleared) &&
+    typedAnswer.matchedPairsCount === solution.pairs.length;
+
+  return {
+    correct: isCorrect,
+    explanation,
+    scoreDelta: isCorrect ? 10 : 0,
+    correctAnswer: solution.pairs,
+    nextAvailable: true,
+  };
+}
+
+export function evaluateSentenceBuilder(
+  solution: SentenceBuilderPrivateSolution,
+  answer: unknown,
+  explanation: string
+): AnswerFeedback {
+  const typedAnswer = (typeof answer === "object" && answer !== null)
+    ? (answer as { tokenSequence?: string[] })
+    : {};
+
+  const sequence = Array.isArray(typedAnswer.tokenSequence) ? typedAnswer.tokenSequence : [];
+
+  const matchesCanonical =
+    sequence.length === solution.canonicalSequence.length &&
+    sequence.every((id, idx) => id === solution.canonicalSequence[idx]);
+
+  let matchesAccepted = false;
+  if (!matchesCanonical && solution.acceptedSequences) {
+    matchesAccepted = solution.acceptedSequences.some(
+      (accepted) =>
+        accepted.length === sequence.length &&
+        accepted.every((id, idx) => id === sequence[idx])
+    );
+  }
+
+  const isCorrect = matchesCanonical || matchesAccepted;
+
+  return {
+    correct: isCorrect,
+    explanation,
+    scoreDelta: isCorrect ? 10 : 0,
+    correctAnswer: solution.canonicalSentence,
+    nextAvailable: true,
+  };
+}
+
+export function evaluateErrorDetective(
+  solution: ErrorDetectivePrivateSolution,
+  answer: unknown,
+  explanation: string
+): AnswerFeedback {
+  const typedAnswer = (typeof answer === "object" && answer !== null)
+    ? (answer as { selectedSegmentId?: string; selectedOptionId?: string })
+    : {};
+
+  const isSegmentCorrect = typedAnswer.selectedSegmentId === solution.errorSegmentId;
+  const isOptionCorrect = typedAnswer.selectedOptionId === solution.correctOptionId;
+  const isCorrect = isSegmentCorrect && isOptionCorrect;
+
+  return {
+    correct: isCorrect,
+    explanation,
+    scoreDelta: isCorrect ? 10 : 0,
+    correctAnswer: solution.correctedSentence,
+    nextAvailable: true,
+  };
+}
+
+export function evaluateListenChoose(
+  solution: ListenChoosePrivateSolution,
+  answer: unknown,
+  explanation: string
+): AnswerFeedback {
+  const typedAnswer = (typeof answer === "object" && answer !== null)
+    ? (answer as { selectedOptionId?: string })
+    : {};
+
+  const isCorrect = typedAnswer.selectedOptionId === solution.correctOptionId;
+
+  return {
+    correct: isCorrect,
+    explanation,
+    scoreDelta: isCorrect ? 10 : 0,
+    correctAnswer: {
+      correctOptionId: solution.correctOptionId,
+      transcriptEn: solution.transcriptEn,
+    },
+    nextAvailable: true,
+  };
+}
+
+export function evaluateRoleplay(
+  solution: RoleplayPrivateSolution,
+  answer: unknown,
+  explanation: string
+): AnswerFeedback {
+  const typedAnswer = (typeof answer === "object" && answer !== null)
+    ? (answer as { selectedChoiceId?: string })
+    : {};
+
+  const matchedEvaluation = solution.evaluations.find(
+    (ev) => ev.choiceId === typedAnswer.selectedChoiceId
+  );
+
+  if (!matchedEvaluation) {
+    return {
+      correct: false,
+      explanation,
+      scoreDelta: 0,
+      nextAvailable: true,
+    };
+  }
+
+  const isAppropriate = matchedEvaluation.rating === "appropriate";
+  const contextualExplanation = matchedEvaluation.feedbackVi
+    ? `${matchedEvaluation.feedbackVi} (${explanation})`
+    : explanation;
+
+  return {
+    correct: isAppropriate,
+    explanation: contextualExplanation,
+    scoreDelta: matchedEvaluation.scoreDelta,
+    correctAnswer: {
+      rating: matchedEvaluation.rating,
+      choiceId: matchedEvaluation.choiceId,
+    },
+    nextAvailable: true,
+  };
+}
+
