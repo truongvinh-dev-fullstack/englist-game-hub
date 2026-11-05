@@ -168,6 +168,9 @@ export function saveStageRecord(input: SaveStageRecordInput): SaveRecordResult {
   if (isClientSide()) {
     try {
       window.localStorage.setItem(GAME_RECORDS_STORAGE_KEY, JSON.stringify(allRecords));
+      if (typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new CustomEvent("egh_progress_updated"));
+      }
     } catch (err) {
       console.warn("Failed to persist stage record:", err);
     }
@@ -187,6 +190,9 @@ export function clearStageRecords(): void {
   if (isClientSide()) {
     try {
       window.localStorage.removeItem(GAME_RECORDS_STORAGE_KEY);
+      if (typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new CustomEvent("egh_progress_updated"));
+      }
     } catch {}
   }
 }

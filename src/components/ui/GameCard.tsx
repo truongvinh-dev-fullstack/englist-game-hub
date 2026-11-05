@@ -1,7 +1,10 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Clock, BarChart, ArrowRight } from "lucide-react";
+import { Clock, BarChart, ArrowRight, Layers, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getGameProgressSummary, type GameProgressStatus } from "@/lib/storage/progress-sync";
 
 export interface GameCardProps {
   slug: string;
@@ -82,9 +85,37 @@ export function GameCard({
 }: GameCardProps) {
   const theme = GAME_THEME_MAP[slug] || DEFAULT_THEME;
 
+  const [progress, setProgress] = useState<GameProgressStatus>({
+    gameSlug: slug,
+    currentStage: 1,
+    highestCompletedStage: 0,
+    totalStages: 1,
+    totalQuestions: 10,
+    hasPlayed: false,
+    completedStagesCount: 0,
+    stageDisplayBadge: "Màn 1",
+    actionText: "Vào chơi",
+    targetUrl: `/games/${slug}`,
+  });
+
+  useEffect(() => {
+    const update = () => {
+      setProgress(getGameProgressSummary(slug));
+    };
+
+    update();
+    window.addEventListener("egh_progress_updated", update);
+    window.addEventListener("storage", update);
+
+    return () => {
+      window.removeEventListener("egh_progress_updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, [slug]);
+
   return (
     <Link
-      href={`/games/${slug}`}
+      href={progress.targetUrl}
       className={cn(
         "group relative flex flex-col justify-between overflow-hidden rounded-3xl border-2 border-slate-200/90 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-primary",
         theme.borderHover,
@@ -124,6 +155,22 @@ export function GameCard({
         <h3 className="text-lg font-black text-slate-900 group-hover:text-primary transition-colors tracking-tight">
           {title}
         </h3>
+
+        {/* Real-time Stage Status Badge */}
+        <div className="mt-2.5 mb-1.5 flex items-center gap-1.5">
+          {progress.hasPlayed ? (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-300/80 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-xs">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-400 shrink-0" />
+              <span>{progress.stageDisplayBadge}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 border border-slate-200/80 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span>{progress.stageDisplayBadge}</span>
+            </span>
+          )}
+        </div>
+
         <p className="mt-2 text-xs sm:text-sm text-slate-500 line-clamp-2 leading-relaxed font-normal">
           {description}
         </p>
@@ -148,8 +195,8 @@ export function GameCard({
         </div>
 
         {/* Hover Action Pill */}
-        <div className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:translate-x-1 transition-transform duration-200">
-          <span>Vào chơi</span>
+        <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:translate-x-1 transition-transform duration-200">
+          <span>{progress.actionText}</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </div>
       </div>

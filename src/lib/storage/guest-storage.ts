@@ -65,6 +65,9 @@ export function recordGuestAnswer(questionId: string, isCorrect: boolean): Guest
   if (isClientSide()) {
     try {
       window.localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(updated));
+      if (typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new CustomEvent("egh_progress_updated"));
+      }
     } catch {
       // Ignore quota errors or private mode restrictions
     }
@@ -77,6 +80,9 @@ export function clearGuestProgress(): void {
   if (isClientSide()) {
     try {
       window.localStorage.removeItem(GUEST_STORAGE_KEY);
+      if (typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new CustomEvent("egh_progress_updated"));
+      }
     } catch {
       // Ignore errors
     }

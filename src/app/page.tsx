@@ -1,3 +1,6 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -17,6 +20,14 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { GameCard } from "@/components/ui/GameCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { cn } from "@/lib/utils";
+import {
+  getUserTotalXP,
+  getDailyGoalProgress,
+  getSkillProgressSummary,
+  type DailyGoalStatus,
+  type SkillProgressStatus,
+} from "@/lib/storage/progress-sync";
 
 const MVP_GAMES = [
   {
@@ -67,8 +78,54 @@ const MVP_GAMES = [
 ];
 
 export default function HomePage() {
+  const [userXp, setUserXp] = useState<number>(0);
+  const [dailyGoal, setDailyGoal] = useState<DailyGoalStatus>({
+    completedCount: 0,
+    targetCount: 2,
+    isCompleted: false,
+    percent: 0,
+    label: "Chưa hoàn thành lượt chơi nào hôm nay",
+  });
+  const [skillProgress, setSkillProgress] = useState<SkillProgressStatus>({
+    totalXp: 0,
+    level: 1,
+    levelName: "Sơ cấp A1",
+    levelProgressPercent: 0,
+    overallPercentage: 0,
+    label: "Chưa có điểm kinh nghiệm, hãy bắt đầu ván đầu tiên",
+  });
+  const [clientUserName, setClientUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Read user session from cookie if available
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"));
+      if (match && match[1]) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(match[1]));
+          setClientUserName(parsed.display_name || parsed.email);
+        } catch {}
+      }
+    }
+
+    const refreshData = () => {
+      setUserXp(getUserTotalXP());
+      setDailyGoal(getDailyGoalProgress());
+      setSkillProgress(getSkillProgressSummary());
+    };
+
+    refreshData();
+    window.addEventListener("egh_progress_updated", refreshData);
+    window.addEventListener("storage", refreshData);
+
+    return () => {
+      window.removeEventListener("egh_progress_updated", refreshData);
+      window.removeEventListener("storage", refreshData);
+    };
+  }, []);
+
   return (
-    <AppShell isGuest={true} userXP={0}>
+    <AppShell isGuest={!clientUserName} userXP={userXp}>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
         {/* Hero Section — Vibrant, high-contrast, gamified banner */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 p-6 sm:p-10 lg:p-12 text-white shadow-xl shadow-indigo-900/20 border border-indigo-500/30">
@@ -151,11 +208,22 @@ export default function HomePage() {
                   <p className="text-xs text-slate-500">Hoàn thành 2 màn chơi để duy trì thói quen</p>
                 </div>
               </div>
-              <span className="rounded-full bg-amber-100 border border-amber-200 px-3 py-1 text-xs font-black text-amber-800">
-                0 / 2 lượt
+              <span
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-black transition-colors",
+                  dailyGoal.isCompleted
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    : "bg-amber-100 text-amber-800 border-amber-200"
+                )}
+              >
+                {dailyGoal.completedCount} / {dailyGoal.targetCount} lượt {dailyGoal.isCompleted && "✓"}
               </span>
             </div>
-            <ProgressBar value={0} max={2} label="Chưa hoàn thành lượt chơi nào hôm nay" />
+            <ProgressBar
+              value={dailyGoal.completedCount}
+              max={dailyGoal.targetCount}
+              label={dailyGoal.label}
+            />
           </div>
 
           {/* Skill Mastery Card */}
@@ -167,14 +235,18 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h2 className="text-base font-extrabold text-slate-900">Tiến độ kỹ năng</h2>
-                  <p className="text-xs text-slate-500">Từ vựng • Ngữ pháp • Nghe • Giao tiếp</p>
+                  <p className="text-xs text-slate-500">Cấp {skillProgress.level} • {skillProgress.levelName}</p>
                 </div>
               </div>
               <span className="rounded-full bg-indigo-100 border border-indigo-200 px-3 py-1 text-xs font-bold text-indigo-700">
-                Chế độ khách
+                {clientUserName ? `Học viên: ${clientUserName}` : "Tiến độ thiết bị"}
               </span>
             </div>
-            <ProgressBar value={0} max={100} label="Đăng nhập để tự động lưu cấp độ & bảng vàng" />
+            <ProgressBar
+              value={skillProgress.overallPercentage}
+              max={100}
+              label={skillProgress.label}
+            />
           </div>
         </section>
 
@@ -201,7 +273,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Responsive Card Grid */}
+          {/* Responsive Card Grid with Live Stages */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {MVP_GAMES.map((game) => (
               <GameCard key={game.slug} {...game} />

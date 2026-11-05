@@ -26,7 +26,19 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
     setMounted(true);
     const questions = getCustomQuestionsByGame(slug);
     setCustomQuestions(questions);
-    setStageRecords(getGameStageRecords(slug));
+    const records = getGameStageRecords(slug);
+    setStageRecords(records);
+
+    // Intelligently default to next uncompleted stage
+    const completedStages = Object.keys(records).map(Number);
+    if (completedStages.length > 0) {
+      const highest = Math.max(...completedStages);
+      const totalS = Math.max(1, Math.ceil(questions.length / SESSION_SIZE));
+      const nextS = Math.min(highest + 1, totalS);
+      setSelectedStage(nextS);
+      const pageForStage = Math.floor((nextS - 1) / 8);
+      setStagePage(pageForStage);
+    }
   }, [slug]);
 
   // Extract unique topics / tags from questions

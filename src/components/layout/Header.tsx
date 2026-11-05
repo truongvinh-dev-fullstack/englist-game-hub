@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Gamepad2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { XPBadge } from "@/components/ui/XPBadge";
+import { getUserTotalXP } from "@/lib/storage/progress-sync";
 
 export interface HeaderProps {
   userXP?: number;
@@ -28,6 +29,7 @@ export function Header({
 }: HeaderProps) {
   const pathname = usePathname() ?? "";
   const [clientUser, setClientUser] = React.useState<{ name: string } | null>(null);
+  const [displayXP, setDisplayXP] = React.useState<number>(userXP);
 
   React.useEffect(() => {
     if (typeof document === "undefined") return;
@@ -39,6 +41,22 @@ export function Header({
       } catch {}
     }
   }, []);
+
+  React.useEffect(() => {
+    const updateXP = () => {
+      const stored = getUserTotalXP();
+      setDisplayXP(userXP > 0 ? Math.max(userXP, stored) : stored);
+    };
+
+    updateXP();
+    window.addEventListener("egh_progress_updated", updateXP);
+    window.addEventListener("storage", updateXP);
+
+    return () => {
+      window.removeEventListener("egh_progress_updated", updateXP);
+      window.removeEventListener("storage", updateXP);
+    };
+  }, [userXP]);
 
   const effectiveIsGuest = isGuest && !clientUser;
   const effectiveUserName = userName || clientUser?.name;
@@ -98,7 +116,7 @@ export function Header({
 
         {/* User / XP / Auth CTA */}
         <div className="flex items-center gap-3">
-          <XPBadge xp={userXP} size="sm" className="sm:inline-flex" />
+          <XPBadge xp={displayXP} size="sm" className="sm:inline-flex" />
 
           {effectiveIsGuest ? (
             <div className="flex items-center gap-2">

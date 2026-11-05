@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -17,6 +17,7 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { GameCard } from "@/components/ui/GameCard";
 import { ALL_GAMES } from "@/lib/data/games-data";
+import { getUserTotalXP } from "@/lib/storage/progress-sync";
 
 const GAME_ICONS: Record<string, React.ReactNode> = {
   "memory-flip": <Layers className="h-6 w-6 text-indigo-600" />,
@@ -33,6 +34,18 @@ export default function GameLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<SkillFilter>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyFilter>("all");
+  const [userXp, setUserXp] = useState<number>(0);
+
+  useEffect(() => {
+    setUserXp(getUserTotalXP());
+    const onUpdated = () => setUserXp(getUserTotalXP());
+    window.addEventListener("egh_progress_updated", onUpdated);
+    window.addEventListener("storage", onUpdated);
+    return () => {
+      window.removeEventListener("egh_progress_updated", onUpdated);
+      window.removeEventListener("storage", onUpdated);
+    };
+  }, []);
 
   const filteredGames = useMemo(() => {
     return ALL_GAMES.filter((game) => {
@@ -64,7 +77,7 @@ export default function GameLibraryPage() {
   const isFiltered = searchQuery !== "" || selectedSkill !== "all" || selectedDifficulty !== "all";
 
   return (
-    <AppShell isGuest={true} userXP={0}>
+    <AppShell isGuest={true} userXP={userXp}>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
         {/* Header Title Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
