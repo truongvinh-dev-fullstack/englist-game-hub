@@ -59,14 +59,15 @@ describe("UI Shell — Utility & Components", () => {
       const links = NAV_LINKS.map((l) => l.href);
       expect(links).toContain("/");
       expect(links).toContain("/games");
-      expect(links).toContain("/topics");
       expect(links).toContain("/review");
       expect(links).toContain("/progress");
+      expect(links).not.toContain("/topics");
     });
 
     it("contains all 5 mobile bottom navigation items", () => {
       const items = BOTTOM_NAV_ITEMS.map((i) => i.href);
-      expect(items).toEqual(["/", "/games", "/topics", "/progress", "/profile"]);
+      expect(items).toEqual(["/", "/games", "/review", "/progress", "/profile"]);
+      expect(items).not.toContain("/topics");
     });
   });
 

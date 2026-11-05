@@ -17,7 +17,6 @@ export interface HeaderProps {
 export const NAV_LINKS = [
   { href: "/", label: "Trang chủ" },
   { href: "/games", label: "Kho game" },
-  { href: "/topics", label: "Chủ đề" },
   { href: "/review", label: "Ôn tập" },
   { href: "/progress", label: "Tiến độ" },
 ];

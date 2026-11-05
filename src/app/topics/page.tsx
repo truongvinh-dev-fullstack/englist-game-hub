@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Briefcase,
@@ -26,6 +26,12 @@ type LevelFilter = "all" | "A0–A1" | "A1–A2" | "A2–B1";
 
 export default function TopicsPage() {
   const [selectedLevel, setSelectedLevel] = useState<LevelFilter>("all");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.location.replace("/games");
+    }
+  }, []);
 
   const filteredTopics = WORKPLACE_TOPICS.filter((t) => {
     if (selectedLevel === "all") return true;

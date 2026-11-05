@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Gamepad2, BookOpen, TrendingUp, User } from "lucide-react";
+import { Home, Gamepad2, RotateCcw, TrendingUp, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface BottomNavProps {
@@ -13,7 +13,7 @@ export interface BottomNavProps {
 export const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Trang chủ", icon: Home },
   { href: "/games", label: "Kho game", icon: Gamepad2 },
-  { href: "/topics", label: "Chủ đề", icon: BookOpen },
+  { href: "/review", label: "Ôn tập", icon: RotateCcw },
   { href: "/progress", label: "Tiến độ", icon: TrendingUp },
   { href: "/profile", label: "Tài khoản", icon: User },
 ];
