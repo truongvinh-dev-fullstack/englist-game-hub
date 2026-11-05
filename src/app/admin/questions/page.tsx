@@ -171,7 +171,7 @@ export default function AdminQuestionsPage() {
           value={selectedGameType}
           onChange={(e) => setSelectedGameType(e.target.value)}
           aria-label="Lọc theo loại trò chơi"
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-primary focus:bg-white focus:outline-hidden"
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-primary focus:bg-white focus:outline-none"
         >
           <option value="all">Tất cả loại trò chơi</option>
           <option value="memory-flip">Memory Flip</option>
@@ -186,7 +186,7 @@ export default function AdminQuestionsPage() {
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           aria-label="Lọc theo trạng thái"
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-primary focus:bg-white focus:outline-hidden"
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-primary focus:bg-white focus:outline-none"
         >
           <option value="all">Tất cả trạng thái</option>
           <option value="published">Đã phát hành (Published)</option>

@@ -53,7 +53,7 @@ export function GameHeader({
           <div className="flex items-center gap-2 shrink-0">
             {elapsedSeconds !== undefined && (
               <div
-                className="flex items-center gap-1.5 rounded-xl bg-slate-100 border border-slate-200/80 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-2xs"
+                className="flex items-center gap-1.5 rounded-xl bg-slate-100 border border-slate-200/80 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm"
                 aria-label={`Thời gian chơi: ${formatDuration(elapsedSeconds)}`}
               >
                 <Clock className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />

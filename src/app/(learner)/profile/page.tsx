@@ -75,9 +75,9 @@ export default async function ProfilePage() {
     <AppShell isGuest={false} userName={displayName}>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
         {/* Profile Header Card */}
-        <div className="rounded-3xl border border-slate-200/90 bg-surface p-6 sm:p-8 shadow-xs">
+        <div className="rounded-3xl border border-slate-200/90 bg-surface p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-white text-2xl font-bold shadow-md">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-2xl font-black shadow-lg shadow-indigo-500/25">
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 text-center sm:text-left space-y-1">

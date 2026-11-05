@@ -472,7 +472,7 @@ export default function AdminImportPage() {
               setCsvParseResult(null);
             }}
             placeholder="Dán nội dung CSV..."
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 font-mono text-xs text-slate-800 leading-relaxed focus:border-emerald-600 focus:bg-white focus:outline-hidden"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 font-mono text-xs text-slate-800 leading-relaxed focus:border-emerald-600 focus:bg-white focus:outline-none"
           />
 
           <div className="flex items-center justify-between pt-2">

@@ -24,7 +24,7 @@ export function BottomNav({ isGuest = true }: BottomNavProps) {
   return (
     <nav
       aria-label="Thanh điều hướng dưới màn hình"
-      className="fixed bottom-0 left-0 right-0 z-40 block border-t border-slate-200/90 bg-surface/95 backdrop-blur-md md:hidden safe-area-bottom"
+      className="fixed bottom-0 left-0 right-0 z-40 block border-t border-slate-200/90 bg-white/95 backdrop-blur-md md:hidden safe-area-bottom shadow-lg"
     >
       <div className="grid h-16 grid-cols-5 items-center justify-around px-1">
         {BOTTOM_NAV_ITEMS.map((item) => {
@@ -42,9 +42,9 @@ export function BottomNav({ isGuest = true }: BottomNavProps) {
               href={targetHref}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-lg py-1 min-h-touch transition-colors",
+                "flex flex-col items-center justify-center gap-1 rounded-xl py-1 min-h-touch transition-colors",
                 isActive
-                  ? "text-primary font-semibold"
+                  ? "text-indigo-600 font-bold"
                   : "text-slate-500 hover:text-slate-900"
               )}
             >

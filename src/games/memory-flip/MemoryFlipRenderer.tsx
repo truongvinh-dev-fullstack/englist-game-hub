@@ -253,7 +253,7 @@ export function MemoryFlipRenderer({
                     ? "border-2 border-rose-400 bg-rose-50 text-rose-900 shadow-md animate-shake"
                     : isFlipped
                     ? "border-2 border-primary bg-blue-50/90 text-slate-900 shadow-md scale-[1.02]"
-                    : "border-2 border-slate-200 bg-linear-to-br from-slate-100 to-slate-200/90 hover:border-slate-300 hover:shadow-xs text-slate-400"
+                    : "border-2 border-slate-200 bg-gradient-to-br from-slate-100 to-slate-200 hover:border-indigo-300 hover:shadow-md text-slate-400"
                 )}
               >
                 {isFlipped ? (

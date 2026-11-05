@@ -85,7 +85,7 @@ export default function AdminTopicsPage() {
                 value={newTopicNameVi}
                 onChange={(e) => setNewTopicNameVi(e.target.value)}
                 placeholder="Ví dụ: Đàm phán hợp đồng thương mại"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-none"
               />
             </div>
 
@@ -99,7 +99,7 @@ export default function AdminTopicsPage() {
                 value={newTopicNameEn}
                 onChange={(e) => setNewTopicNameEn(e.target.value)}
                 placeholder="Ví dụ: Contract Negotiations"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-none"
               />
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function AdminTopicsPage() {
                 value={newTopicDescription}
                 onChange={(e) => setNewTopicDescription(e.target.value)}
                 placeholder="Mô tả các tình huống hoặc từ vựng của chủ đề này..."
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-none"
               />
             </div>
 
@@ -125,7 +125,7 @@ export default function AdminTopicsPage() {
               <select
                 value={newTopicLevel}
                 onChange={(e) => setNewTopicLevel(e.target.value as "A0–A1" | "A1–A2" | "A2–B1")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-hidden"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-purple-600 focus:outline-none"
               >
                 <option value="A0–A1">A0–A1 (Cơ bản)</option>
                 <option value="A1–A2">A1–A2 (Sơ cấp)</option>

@@ -73,13 +73,13 @@ export default function GameLibraryPage() {
               Thư viện trò chơi tiếng Anh
             </h1>
             <p className="mt-1 text-sm text-slate-500 max-w-2xl">
-              Kho 6 mini-games tương tác từ 2–5 phút giúp bạn củng cố từ vựng, ngữ pháp, phản xạ nghe và giao tiếp văn phòng.
+              Kho 5 mini-games tương tác từ 2–5 phút giúp bạn củng cố từ vựng, ngữ pháp, phản xạ nghe và giao tiếp văn phòng.
             </p>
           </div>
 
           <Link
             href="/topics"
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-blue-50/60 px-4 py-2.5 text-xs sm:text-sm font-bold text-primary hover:bg-blue-100/70 transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs sm:text-sm font-bold text-blue-700 hover:bg-blue-100 transition-colors self-start sm:self-auto shadow-xs"
           >
             <BookOpen className="h-4 w-4" />
             <span>Xem theo chủ đề công sở</span>
@@ -88,7 +88,7 @@ export default function GameLibraryPage() {
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="rounded-2xl border border-slate-200/90 bg-surface p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="rounded-2xl border border-slate-200/90 bg-surface p-4 sm:p-5 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
@@ -99,7 +99,7 @@ export default function GameLibraryPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm trò chơi theo tên hoặc kỹ năng..."
                 aria-label="Tìm kiếm trò chơi"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
               {searchQuery && (
                 <button
@@ -119,7 +119,7 @@ export default function GameLibraryPage() {
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value as DifficultyFilter)}
                 aria-label="Chọn cấp độ độ khó"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-sm font-medium text-slate-700 focus:border-primary focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-sm font-medium text-slate-700 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
               >
                 <option value="all">Tất cả cấp độ</option>
                 <option value="A0">Cấp độ A0 (Mới bắt đầu)</option>
@@ -151,10 +151,10 @@ export default function GameLibraryPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setSelectedSkill(tab.id as SkillFilter)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all min-h-[36px] ${
+                  className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all min-h-[36px] ${
                     isSelected
-                      ? "bg-primary text-white shadow-xs"
-                      : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80"
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
                   {tab.label}

@@ -98,7 +98,7 @@ export default function ProgressPage() {
         </div>
 
         {/* Guest Progress Notice Banner */}
-        <div className="rounded-2xl border border-blue-200/90 bg-linear-to-r from-blue-50/80 to-indigo-50/50 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-2xl border border-blue-200/90 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-primary">
               <Shield className="h-5 w-5" />

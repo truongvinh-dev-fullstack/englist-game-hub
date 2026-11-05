@@ -31,9 +31,10 @@ export default function AdminDashboardPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Welcome Banner */}
-      <div className="rounded-3xl border border-slate-200/90 bg-linear-to-r from-slate-900 to-slate-800 p-6 sm:p-8 text-white shadow-md">
-        <div className="max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200 backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-700 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-6 sm:p-8 text-white shadow-xl">
+        <div className="pointer-events-none absolute -right-10 -bottom-10 h-48 w-48 rounded-full bg-indigo-500/20 blur-2xl" />
+        <div className="relative z-10 max-w-2xl space-y-2">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200 backdrop-blur-md border border-white/10">
             <Sparkles className="h-3 w-3 text-amber-400" />
             <span>Hệ thống biên tập & kiểm duyệt nội dung MVP</span>
           </div>

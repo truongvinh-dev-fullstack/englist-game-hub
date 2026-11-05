@@ -225,7 +225,7 @@ function AuthFormContent() {
                       name="fullName"
                       type="text"
                       placeholder="Ví dụ: Minh Anh"
-                      className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                      className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -246,7 +246,7 @@ function AuthFormContent() {
                       autoComplete="email"
                       required
                       placeholder="name@example.com"
-                      className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                      className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -269,7 +269,7 @@ function AuthFormContent() {
                       required
                       minLength={6}
                       placeholder="••••••••"
-                      className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                      className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -341,7 +341,7 @@ function AuthFormContent() {
                           autoComplete="email"
                           required
                           placeholder="name@example.com"
-                          className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                          className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                     </div>
@@ -362,7 +362,7 @@ function AuthFormContent() {
                           autoComplete="current-password"
                           required
                           placeholder="••••••••"
-                          className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                          className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                     </div>
@@ -400,7 +400,7 @@ function AuthFormContent() {
                           autoComplete="email"
                           required
                           placeholder="name@company.com"
-                          className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                          className="w-full min-h-touch rounded-xl border border-slate-300 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                     </div>

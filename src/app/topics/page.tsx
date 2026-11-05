@@ -48,7 +48,7 @@ export default function TopicsPage() {
 
           <Link
             href="/games"
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-blue-50/60 px-4 py-2.5 text-xs sm:text-sm font-bold text-primary hover:bg-blue-100/70 transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs sm:text-sm font-bold text-blue-700 hover:bg-blue-100 transition-colors self-start sm:self-auto shadow-xs"
           >
             <Gamepad2 className="h-4 w-4" />
             <span>Xem kho trò chơi</span>
@@ -76,9 +76,9 @@ export default function TopicsPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedLevel(tab.id as LevelFilter)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all min-h-[36px] ${
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all min-h-[36px] ${
                   isSelected
-                    ? "bg-primary text-white shadow-xs"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/25"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -93,7 +93,7 @@ export default function TopicsPage() {
           {filteredTopics.map((topic) => (
             <div
               key={topic.slug}
-              className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-surface p-6 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200"
+              className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-surface p-6 shadow-xs hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
             >
               <div className="space-y-4">
                 {/* Header: Icon + Level Badge */}

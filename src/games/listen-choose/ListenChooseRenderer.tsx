@@ -224,7 +224,7 @@ export function ListenChooseRenderer({
   return (
     <div className="space-y-6">
       {/* Audio Listening Control Center */}
-      <div className="rounded-3xl border-2 border-slate-200/90 bg-linear-to-b from-surface to-slate-50/80 p-6 sm:p-8 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
+      <div className="rounded-3xl border-2 border-indigo-100 bg-gradient-to-b from-white via-indigo-50/30 to-slate-50 p-6 sm:p-8 text-center shadow-sm flex flex-col items-center justify-center space-y-4">
         {/* Main Audio Pulse Button */}
         <div className="relative">
           {isPlaying && (

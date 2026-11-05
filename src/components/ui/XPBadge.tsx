@@ -30,7 +30,7 @@ export function XPBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 shadow-xs",
+        "inline-flex items-center font-bold rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-800 border border-amber-300 shadow-sm",
         sizeClasses[size],
         className
       )}

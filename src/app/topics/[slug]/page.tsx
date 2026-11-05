@@ -27,19 +27,23 @@ export default async function TopicDetailPage({ params }: TopicDetailPageProps) 
         </div>
 
         {/* Topic Banner */}
-        <div className="rounded-3xl border border-blue-200/80 bg-linear-to-r from-blue-600 to-indigo-700 p-6 sm:p-8 text-white shadow-lg space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
+        <div className="relative overflow-hidden rounded-3xl border border-blue-400/30 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 p-6 sm:p-8 text-white shadow-xl space-y-3">
+          {/* Decorative ambient blobs */}
+          <div className="pointer-events-none absolute -right-10 -bottom-10 h-48 w-48 rounded-full bg-cyan-400/20 blur-2xl" />
+          <div className="pointer-events-none absolute left-1/3 -top-10 h-40 w-40 rounded-full bg-purple-500/30 blur-2xl" />
+
+          <div className="relative z-10 inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md px-3 py-1 text-xs font-bold text-amber-300 border border-white/20">
             <BookOpen className="h-3.5 w-3.5 text-amber-300" />
             <span>Chủ đề: {topic.levelRange}</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h1 className="relative z-10 text-2xl sm:text-3xl font-extrabold tracking-tight drop-shadow-sm">
             {topic.nameVi}
           </h1>
-          <p className="text-sm font-medium text-blue-100">
+          <p className="relative z-10 text-sm font-semibold text-blue-200">
             {topic.nameEn}
           </p>
-          <p className="text-sm text-blue-100/90 max-w-2xl leading-relaxed pt-1">
+          <p className="relative z-10 text-sm text-blue-100/90 max-w-2xl leading-relaxed pt-1">
             {topic.description}
           </p>
         </div>

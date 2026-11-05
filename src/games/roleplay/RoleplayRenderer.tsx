@@ -61,7 +61,7 @@ export function RoleplayRenderer({
   return (
     <div className="space-y-6">
       {/* Workplace Situation Background Card */}
-      <div className="rounded-2xl border border-blue-200/80 bg-linear-to-r from-blue-50/80 to-indigo-50/50 p-4 sm:p-5 shadow-xs">
+      <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-5 shadow-sm">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider mb-1.5">
           <MessageSquare className="h-3.5 w-3.5 text-primary" />
           <span>Bối cảnh tình huống</span>
