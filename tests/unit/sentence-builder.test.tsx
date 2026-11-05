@@ -5,6 +5,7 @@ import { sentenceBuilderAdapter } from "@/games/sentence-builder/adapter";
 import { SENTENCE_BUILDER_SAMPLE_QUESTIONS } from "@/games/sentence-builder/sample-data";
 import { SentenceBuilderRenderer } from "@/games/sentence-builder/SentenceBuilderRenderer";
 import { evaluateAnswer } from "@/core/evaluator";
+import type { SentenceBuilderQuestion } from "@/lib/validations/content/sentence-builder";
 
 describe("Sentence Builder Game (T-010)", () => {
   describe("Sentence Builder Adapter", () => {
@@ -136,6 +137,45 @@ describe("Sentence Builder Game (T-010)", () => {
       const emptyResult = evaluateAnswer(question1, {});
       expect(emptyResult.correct).toBe(false);
       expect(emptyResult.scoreDelta).toBe(0);
+    });
+
+    it("accepts interchangeable token IDs for duplicate words (e.g. multiple 'to' tokens)", () => {
+      const questionWithDuplicates: SentenceBuilderQuestion = {
+        id: "sb-dup-test",
+        game_type: "sentence-builder",
+        topic_id: "00000000-0000-0000-0000-000000000001",
+        difficulty: "A1",
+        skill: "grammar",
+        prompt: "Sắp xếp các từ thành câu hoàn chỉnh đúng ngữ pháp.",
+        status: "published",
+        version: 1,
+        concept_tags: ["customer-service"],
+        explanation_vi: "Have to + V: phải làm gì. Reply to: phản hồi cho ai.",
+        public_payload: {
+          promptVi: "Tôi phải trả lời khách hàng.",
+          tokens: [
+            { id: "t1", text: "I" },
+            { id: "t2", text: "have" },
+            { id: "t3", text: "to" },
+            { id: "t4", text: "reply" },
+            { id: "t5", text: "to" },
+            { id: "t6", text: "the" },
+            { id: "t7", text: "customer." },
+          ],
+        },
+        private_solution: {
+          canonicalSequence: ["t1", "t2", "t3", "t4", "t5", "t6", "t7"],
+          canonicalSentence: "I have to reply to the customer.",
+        },
+      };
+
+      // User picked t5 for the first "to" and t3 for the second "to"
+      const swappedResult = evaluateAnswer(questionWithDuplicates, {
+        tokenSequence: ["t1", "t2", "t5", "t4", "t3", "t6", "t7"],
+      });
+
+      expect(swappedResult.correct).toBe(true);
+      expect(swappedResult.scoreDelta).toBe(10);
     });
   });
 });

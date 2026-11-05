@@ -19,7 +19,12 @@ export function evaluateAnswer(question: AnyQuestion, answer: unknown): AnswerFe
       return evaluateMemoryFlip(question.private_solution, answer, question.explanation_vi);
 
     case "sentence-builder":
-      return evaluateSentenceBuilder(question.private_solution, answer, question.explanation_vi);
+      return evaluateSentenceBuilder(
+        question.private_solution,
+        answer,
+        question.explanation_vi,
+        question.public_payload.tokens
+      );
 
     case "error-detective":
       return evaluateErrorDetective(question.private_solution, answer, question.explanation_vi);

@@ -38,18 +38,25 @@ export function evaluateMemoryFlip(
 export function evaluateSentenceBuilder(
   solution: SentenceBuilderPrivateSolution,
   answer: unknown,
-  explanation: string
+  explanation: string,
+  tokens?: Array<{ id: string; text: string }>
 ): AnswerFeedback {
   const typedAnswer = (typeof answer === "object" && answer !== null)
-    ? (answer as { tokenSequence?: string[] })
+    ? (answer as {
+        tokenSequence?: string[];
+        tokens?: Array<{ id: string; text: string }>;
+        constructedSentence?: string;
+      })
     : {};
 
   const sequence = Array.isArray(typedAnswer.tokenSequence) ? typedAnswer.tokenSequence : [];
 
+  // 1. Exact ID sequence matches canonical
   const matchesCanonical =
     sequence.length === solution.canonicalSequence.length &&
     sequence.every((id, idx) => id === solution.canonicalSequence[idx]);
 
+  // 2. Exact ID sequence matches an alternative accepted sequence
   let matchesAccepted = false;
   if (!matchesCanonical && solution.acceptedSequences) {
     matchesAccepted = solution.acceptedSequences.some(
@@ -59,7 +66,54 @@ export function evaluateSentenceBuilder(
     );
   }
 
-  const isCorrect = matchesCanonical || matchesAccepted;
+  // 3. Word text equivalence for duplicate tokens (e.g. multiple "to", "the", "a")
+  let matchesByText = false;
+  const tokenList = tokens || typedAnswer.tokens;
+  if (!matchesCanonical && !matchesAccepted && tokenList && tokenList.length > 0) {
+    const tokenMap = new Map(tokenList.map((t) => [t.id, t.text.trim()]));
+
+    if (sequence.length === solution.canonicalSequence.length) {
+      const userWords = sequence.map((id) => tokenMap.get(id) || "");
+      const canonicalWords = solution.canonicalSequence.map((id) => tokenMap.get(id) || "");
+
+      // Compare word-by-word (case-insensitive)
+      const wordsMatchCanonical = userWords.every(
+        (w, idx) => w.toLowerCase() === canonicalWords[idx].toLowerCase()
+      );
+
+      if (wordsMatchCanonical) {
+        matchesByText = true;
+      }
+
+      // Also check acceptedSequences word-by-word
+      if (!matchesByText && solution.acceptedSequences) {
+        matchesByText = solution.acceptedSequences.some((accepted) => {
+          if (accepted.length !== sequence.length) return false;
+          const acceptedWords = accepted.map((id) => tokenMap.get(id) || "");
+          return userWords.every(
+            (w, idx) => w.toLowerCase() === acceptedWords[idx].toLowerCase()
+          );
+        });
+      }
+
+      // Fallback: check normalized full constructed sentence string against canonicalSentence
+      if (!matchesByText && solution.canonicalSentence) {
+        const normalize = (s: string) =>
+          s
+            .replace(/\s+/g, " ")
+            .replace(/\s+([.,!?;:])/g, "$1")
+            .trim()
+            .toLowerCase();
+
+        const userSentence = userWords.join(" ");
+        if (normalize(userSentence) === normalize(solution.canonicalSentence)) {
+          matchesByText = true;
+        }
+      }
+    }
+  }
+
+  const isCorrect = matchesCanonical || matchesAccepted || matchesByText;
 
   return {
     correct: isCorrect,

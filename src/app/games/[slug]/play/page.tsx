@@ -215,7 +215,10 @@ function GamePlayContent() {
 
       if ("game_type" in currentQuestion) {
         if (currentQuestion.game_type === "sentence-builder") {
-          const evalRes = evaluateAnswer(currentQuestion, { tokenSequence: selectedSequence });
+          const evalRes = evaluateAnswer(currentQuestion, {
+            tokenSequence: selectedSequence,
+            tokens: currentQuestion.public_payload.tokens,
+          });
           isCorrect = evalRes.correct;
           scoreDelta = evalRes.scoreDelta;
           correctAnswerText = !isCorrect ? currentQuestion.private_solution.canonicalSentence : undefined;
