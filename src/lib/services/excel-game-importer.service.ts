@@ -508,6 +508,11 @@ function transformListenChoose(
   const audioPath = rawAudio || "tts";
   const transcriptEn = findValue(
     norm,
+    "cauthoaitienganh",
+    "cauthoaitienganhdocbangmay",
+    "cauthoaidoc",
+    "cauthoai",
+    "thoai",
     "cauthoidoc",
     "cauthoitienganh",
     "cautienganh",
@@ -672,7 +677,7 @@ export function parseGameExcelOrCsv(
   buffer: ArrayBuffer | Uint8Array,
   gameType: SupportedGameType
 ): ExcelImportResult {
-  const wb = XLSX.read(buffer, { type: "array" });
+  const wb = XLSX.read(buffer, { type: "array", codepage: 65001 });
   const firstSheetName = wb.SheetNames[0];
 
   if (!firstSheetName || !wb.Sheets[firstSheetName]) {

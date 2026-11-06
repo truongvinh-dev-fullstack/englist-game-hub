@@ -230,5 +230,28 @@ describe("Excel Game Importer Service", () => {
         expect(q2.private_solution.correctOptionId).toBe("opt2");
       }
     });
+
+    it("parses UTF-8 CSV with Vietnamese headers and diacritics without mojibake", () => {
+      const csvData = [
+        `Độ khó (A1/A2),Câu thoại tiếng Anh (đọc bằng máy),Lựa chọn 1,Lựa chọn 2,Lựa chọn 3,Lựa chọn 4,"Đáp án đúng (1, 2, 3, 4 hoặc A, B, C, D)",Giải thích tiếng Việt,Từ khóa`,
+        `A1,I need to check the weekly report.,Tôi cần trả lời email nhà cung cấp.,Tôi cần hủy đặt chỗ.,Tôi cần nhận hàng giao.,Tôi cần kiểm tra báo cáo tuần.,D,Nghe cụm “check the weekly report” nghĩa là “kiểm tra báo cáo tuần”.,listening;workplace;check`,
+      ].join("\n");
+
+      const encoder = new TextEncoder();
+      const csvBuffer = encoder.encode(csvData);
+
+      const result = parseGameExcelOrCsv(csvBuffer, "listen-choose");
+      expect(result.validCount).toBe(1);
+      expect(result.errorCount).toBe(0);
+      expect(result.errors).toEqual([]);
+
+      const q = result.validQuestions[0];
+      if (q.game_type === "listen-choose") {
+        expect(q.public_payload.speechText).toBe("I need to check the weekly report.");
+        expect(q.private_solution.transcriptEn).toBe("I need to check the weekly report.");
+        expect(q.public_payload.options[3].text).toBe("Tôi cần kiểm tra báo cáo tuần.");
+        expect(q.private_solution.correctOptionId).toBe("opt4");
+      }
+    });
   });
 });

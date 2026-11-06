@@ -14,13 +14,17 @@ import {
 } from "lucide-react";
 import { ALL_GAMES } from "@/lib/data/games-data";
 import { WORKPLACE_TOPICS } from "@/lib/data/topics-data";
-import { getQuestionsStatistics } from "@/lib/storage/question-storage";
+import { getQuestionsStatistics, loadCustomQuestionsAsync } from "@/lib/storage/question-storage";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState(() => getQuestionsStatistics());
 
   useEffect(() => {
-    setStats(getQuestionsStatistics());
+    const refresh = () => setStats(getQuestionsStatistics());
+    refresh();
+    loadCustomQuestionsAsync().then(refresh);
+    window.addEventListener("egh_questions_updated", refresh);
+    return () => window.removeEventListener("egh_questions_updated", refresh);
   }, []);
 
   const totalQuestions = stats.totalQuestions;

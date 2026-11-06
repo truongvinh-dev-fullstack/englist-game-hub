@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Play, Layers, Filter, CheckCircle2, ChevronRight, Trophy } from "lucide-react";
-import { getCustomQuestionsByGame } from "@/lib/storage/question-storage";
+import { loadCustomQuestionsByGameAsync } from "@/lib/storage/question-storage";
 import { getGameStageRecords, formatDuration, type StageRecord } from "@/lib/storage/game-record-storage";
 import type { AnyQuestion } from "@/lib/validations/content";
 import { cn } from "@/lib/utils";
@@ -24,21 +24,29 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
 
   useEffect(() => {
     setMounted(true);
-    const questions = getCustomQuestionsByGame(slug);
-    setCustomQuestions(questions);
-    const records = getGameStageRecords(slug);
-    setStageRecords(records);
 
-    // Intelligently default to next uncompleted stage
-    const completedStages = Object.keys(records).map(Number);
-    if (completedStages.length > 0) {
-      const highest = Math.max(...completedStages);
-      const totalS = Math.max(1, Math.ceil(questions.length / SESSION_SIZE));
-      const nextS = Math.min(highest + 1, totalS);
-      setSelectedStage(nextS);
-      const pageForStage = Math.floor((nextS - 1) / 8);
-      setStagePage(pageForStage);
-    }
+    const reload = () => {
+      loadCustomQuestionsByGameAsync(slug).then((questions) => {
+        setCustomQuestions(questions);
+        const records = getGameStageRecords(slug);
+        setStageRecords(records);
+
+        // Intelligently default to next uncompleted stage
+        const completedStages = Object.keys(records).map(Number);
+        if (completedStages.length > 0) {
+          const highest = Math.max(...completedStages);
+          const totalS = Math.max(1, Math.ceil(questions.length / SESSION_SIZE));
+          const nextS = Math.min(highest + 1, totalS);
+          setSelectedStage(nextS);
+          const pageForStage = Math.floor((nextS - 1) / 8);
+          setStagePage(pageForStage);
+        }
+      });
+    };
+
+    reload();
+    window.addEventListener("egh_questions_updated", reload);
+    return () => window.removeEventListener("egh_questions_updated", reload);
   }, [slug]);
 
   // Extract unique topics / tags from questions

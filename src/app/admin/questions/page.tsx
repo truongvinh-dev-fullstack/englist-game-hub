@@ -17,7 +17,7 @@ import { ERROR_DETECTIVE_SAMPLE_QUESTIONS } from "@/games/error-detective/sample
 import { LISTEN_CHOOSE_SAMPLE_QUESTIONS } from "@/games/listen-choose/sample-data";
 import { ROLEPLAY_SAMPLE_QUESTIONS } from "@/games/roleplay/sample-data";
 import {
-  getCustomQuestions,
+  loadCustomQuestionsAsync,
   deleteCustomQuestion,
   updateCustomQuestionStatus,
 } from "@/lib/storage/question-storage";
@@ -29,6 +29,7 @@ interface AdminQuestionItem {
   skill: string;
   difficulty: string;
   status: "published" | "draft" | "review" | "archived";
+  detail?: string;
 }
 
 const INITIAL_ADMIN_QUESTIONS: AdminQuestionItem[] = [
@@ -80,25 +81,46 @@ export default function AdminQuestionsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   useEffect(() => {
-    const custom = getCustomQuestions();
-    if (custom.length > 0) {
-      const customGameTypes = new Set(custom.map((q) => q.game_type));
-      const filteredInitial = INITIAL_ADMIN_QUESTIONS.filter(
-        (q) => !customGameTypes.has(q.game_type)
-      );
+    const refresh = () => {
+      loadCustomQuestionsAsync().then((custom) => {
+        if (custom.length > 0) {
+          const customGameTypes = new Set(custom.map((q) => q.game_type));
+          const filteredInitial = INITIAL_ADMIN_QUESTIONS.filter(
+            (q) => !customGameTypes.has(q.game_type)
+          );
 
-      setQuestions([
-        ...custom.map((q) => ({
-          id: q.id,
-          game_type: q.game_type,
-          prompt: q.prompt,
-          skill: q.skill,
-          difficulty: q.difficulty,
-          status: q.status || "published",
-        })),
-        ...filteredInitial,
-      ]);
-    }
+          setQuestions([
+            ...custom.map((q) => {
+              let detail: string | undefined;
+              if (q.game_type === "listen-choose") {
+                detail =
+                  (q.private_solution as { transcriptEn?: string })?.transcriptEn ||
+                  (q.public_payload as { speechText?: string })?.speechText;
+              } else if (q.game_type === "sentence-builder") {
+                detail = (q.private_solution as { canonicalSentence?: string })?.canonicalSentence;
+              } else if (q.game_type === "error-detective") {
+                detail = (q.private_solution as { correctedSentence?: string })?.correctedSentence;
+              }
+
+              return {
+                id: q.id,
+                game_type: q.game_type,
+                prompt: q.prompt,
+                skill: q.skill,
+                difficulty: q.difficulty,
+                status: q.status || "published",
+                detail,
+              };
+            }),
+            ...filteredInitial,
+          ]);
+        }
+      });
+    };
+
+    refresh();
+    window.addEventListener("egh_questions_updated", refresh);
+    return () => window.removeEventListener("egh_questions_updated", refresh);
   }, []);
 
   const filteredQuestions = questions.filter((q) => {
@@ -224,8 +246,13 @@ export default function AdminQuestionsPage() {
                       {q.game_type}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 max-w-md truncate font-semibold text-slate-900">
-                    {q.prompt}
+                  <td className="py-3.5 px-4 max-w-md font-semibold text-slate-900">
+                    <div className="truncate">{q.prompt}</div>
+                    {q.detail && (
+                      <div className="text-[11px] font-medium text-indigo-600 truncate mt-0.5">
+                        {q.detail}
+                      </div>
+                    )}
                   </td>
                   <td className="py-3.5 px-4 capitalize">{q.skill}</td>
                   <td className="py-3.5 px-4 font-bold">{q.difficulty}</td>

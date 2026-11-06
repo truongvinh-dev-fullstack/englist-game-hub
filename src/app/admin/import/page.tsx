@@ -84,6 +84,8 @@ export default function AdminImportPage() {
   const [excelResult, setExcelResult] = useState<ExcelImportResult | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [isImported, setIsImported] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Raw CSV Legacy Mode states
@@ -140,10 +142,25 @@ export default function AdminImportPage() {
   };
 
   // 4. Commit Import
-  const handleCommitImport = () => {
-    if (!excelResult || excelResult.validCount === 0) return;
-    saveCustomQuestions(excelResult.validQuestions);
-    setIsImported(true);
+  const handleCommitImport = async () => {
+    if (!excelResult || excelResult.validCount === 0 || isSaving) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const saved = await saveCustomQuestions(excelResult.validQuestions);
+      if (saved && saved.length > 0) {
+        setIsImported(true);
+      } else {
+        setSaveError("Không thể lưu câu hỏi vào cơ sở dữ liệu trình duyệt.");
+      }
+    } catch (err) {
+      setSaveError(
+        "Lỗi trong quá trình lưu dữ liệu: " +
+          (err instanceof Error ? err.message : String(err))
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 5. Raw CSV Handlers
@@ -404,16 +421,24 @@ export default function AdminImportPage() {
                 </div>
               )}
 
+              {/* Save Error Alert */}
+              {saveError && (
+                <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-xs font-semibold text-red-800 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
               {/* Commit Actions */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-xs text-slate-500">
                   {isImported
-                    ? "Đã nạp thành công các câu hỏi vào ngân hàng đề thi!"
+                    ? `Đã nạp thành công ${excelResult.validCount} câu hỏi vào ngân hàng dữ liệu!`
                     : "Xác nhận nạp để lưu toàn bộ các câu hợp lệ."}
                 </span>
 
                 {isImported ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                       <span>Nạp thành công!</span>
@@ -425,16 +450,32 @@ export default function AdminImportPage() {
                       <span>Xem danh sách câu hỏi</span>
                       <ArrowRight className="h-3 w-3" />
                     </Link>
+                    <Link
+                      href={`/games/${activeGame}`}
+                      className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-hover shadow-xs transition-colors ml-2"
+                    >
+                      <span>Vào chơi ngay</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={handleCommitImport}
-                    disabled={excelResult.validCount === 0}
+                    disabled={excelResult.validCount === 0 || isSaving}
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors shadow-xs"
                   >
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Xác nhận nạp ({excelResult.validCount} câu hợp lệ)</span>
+                    {isSaving ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Đang lưu vào bộ nhớ...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Xác nhận nạp ({excelResult.validCount} câu hợp lệ)</span>
+                      </>
+                    )}
                   </button>
                 )}
               </div>

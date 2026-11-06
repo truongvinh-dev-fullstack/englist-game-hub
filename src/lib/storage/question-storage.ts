@@ -4,6 +4,7 @@ import { SENTENCE_BUILDER_SAMPLE_QUESTIONS } from "@/games/sentence-builder/samp
 import { ERROR_DETECTIVE_SAMPLE_QUESTIONS } from "@/games/error-detective/sample-data";
 import { LISTEN_CHOOSE_SAMPLE_QUESTIONS } from "@/games/listen-choose/sample-data";
 import { ROLEPLAY_SAMPLE_QUESTIONS } from "@/games/roleplay/sample-data";
+import { getIdbItem, setIdbItem, deleteIdbItem } from "./idb-storage";
 
 export interface StoredQuestionItem {
   id: string;
@@ -21,38 +22,149 @@ export interface StoredQuestionItem {
 
 const CUSTOM_QUESTIONS_STORAGE_KEY = "egh_custom_questions_v1";
 
+// In-memory cache for fast synchronous access
+let memoryQuestionsCache: StoredQuestionItem[] | null = null;
+let isIdbLoadingPromise: Promise<StoredQuestionItem[]> | null = null;
+
 function isClientSide(): boolean {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return typeof window !== "undefined";
 }
 
-/**
- * Retrieves all custom/imported questions stored in client localStorage
- */
-export function getCustomQuestions(): StoredQuestionItem[] {
-  if (!isClientSide()) return [];
-
-  try {
-    const raw = window.localStorage.getItem(CUSTOM_QUESTIONS_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+function notifyQuestionsUpdated() {
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+    try {
+      window.dispatchEvent(new CustomEvent("egh_questions_updated"));
+    } catch {
+      // Ignore if CustomEvent not supported
+    }
   }
 }
 
 /**
- * Saves new imported questions to localStorage.
- * Rule: OVERWRITES and clears old questions of the same game_type(s).
+ * Asynchronously loads questions from IndexedDB (or fallback to localStorage)
+ * Populates memory cache and dispatches update event if data was loaded.
  */
-export function saveCustomQuestions(
+export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> {
+  if (!isClientSide()) return [];
+
+  // Return existing memory cache if already populated
+  if (memoryQuestionsCache !== null) {
+    return memoryQuestionsCache;
+  }
+
+  // Prevent multiple parallel IndexedDB reads
+  if (isIdbLoadingPromise) {
+    return isIdbLoadingPromise;
+  }
+
+  isIdbLoadingPromise = (async () => {
+    try {
+      // 1. Try reading from IndexedDB (supports unlimited MBs for 3,000+ questions)
+      const idbData = await getIdbItem<StoredQuestionItem[]>(CUSTOM_QUESTIONS_STORAGE_KEY);
+      if (Array.isArray(idbData) && idbData.length > 0) {
+        memoryQuestionsCache = idbData;
+        notifyQuestionsUpdated();
+        return idbData;
+      }
+
+      // 2. Fallback to localStorage if IDB has nothing yet
+      if (typeof window.localStorage !== "undefined") {
+        const raw = window.localStorage.getItem(CUSTOM_QUESTIONS_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            memoryQuestionsCache = parsed;
+            // Also sync to IndexedDB for future capacity
+            setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, parsed).catch(() => {});
+            notifyQuestionsUpdated();
+            return parsed;
+          }
+        }
+      }
+
+      memoryQuestionsCache = [];
+      return [];
+    } catch (err) {
+      console.warn("Failed to load questions from storage:", err);
+      memoryQuestionsCache = [];
+      return [];
+    } finally {
+      isIdbLoadingPromise = null;
+    }
+  })();
+
+  return isIdbLoadingPromise;
+}
+
+/**
+ * Asynchronously returns custom questions for a specific game type
+ */
+export async function loadCustomQuestionsByGameAsync(gameType: string): Promise<AnyQuestion[]> {
+  const all = await loadCustomQuestionsAsync();
+  return all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
+}
+
+/**
+ * Synchronous access for React render cycles (reads memory cache, then localStorage,
+ * and triggers async IDB hydration if memory cache is not yet warm).
+ */
+export function getCustomQuestions(): StoredQuestionItem[] {
+  if (!isClientSide()) return [];
+
+  if (memoryQuestionsCache !== null) {
+    return memoryQuestionsCache;
+  }
+
+  // Try synchronous localStorage read
+  try {
+    if (typeof window.localStorage !== "undefined") {
+      const raw = window.localStorage.getItem(CUSTOM_QUESTIONS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          memoryQuestionsCache = parsed;
+          return parsed;
+        }
+      }
+    }
+  } catch {
+    // LocalStorage read error or quota issue
+  }
+
+  // Kick off background IndexedDB load to warm cache
+  loadCustomQuestionsAsync().catch(() => {});
+
+  return [];
+}
+
+/**
+ * Synchronous get by game type
+ */
+export function getCustomQuestionsByGame(gameType: string): AnyQuestion[] {
+  const all = getCustomQuestions();
+  return all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
+}
+
+/**
+ * Saves new imported questions to high-capacity storage.
+ * - Updates in-memory cache instantly
+ * - Persists to IndexedDB (supports 3,000+ questions without 5MB quota errors)
+ * - Persists to localStorage when within capacity
+ * - Emits egh_questions_updated event for instant UI re-render
+ */
+export async function saveCustomQuestions(
   newQuestions: AnyQuestion[],
   overwrite = true
-): StoredQuestionItem[] {
+): Promise<StoredQuestionItem[]> {
   if (!isClientSide() || newQuestions.length === 0) return [];
 
   try {
-    const existing = getCustomQuestions();
+    // Warm memory cache if not loaded yet
+    if (memoryQuestionsCache === null) {
+      await loadCustomQuestionsAsync();
+    }
+
+    const existing = memoryQuestionsCache || [];
     const timestamp = Date.now();
 
     const formattedNew: StoredQuestionItem[] = newQuestions.map((q, idx) => ({
@@ -78,48 +190,81 @@ export function saveCustomQuestions(
       : existing;
 
     const merged = [...remaining, ...formattedNew];
-    window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(merged));
+
+    // 1. Update memory cache immediately
+    memoryQuestionsCache = merged;
+
+    // 2. Persist to IndexedDB (handles large datasets 3,000+ items seamlessly)
+    await setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, merged);
+
+    // 3. Try to save to localStorage for small datasets; gracefully ignore QuotaExceededError
+    if (typeof window.localStorage !== "undefined") {
+      try {
+        window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(merged));
+      } catch (storageErr) {
+        console.info(
+          "Dataset exceeds 5MB localStorage quota; stored safely in high-capacity IndexedDB.",
+          storageErr
+        );
+      }
+    }
+
+    // 4. Notify all components to re-render
+    notifyQuestionsUpdated();
+
     return merged;
   } catch (err) {
-    console.error("Failed to save custom questions to localStorage:", err);
+    console.error("Failed to save custom questions:", err);
     return [];
   }
 }
 
 /**
- * Returns all custom questions for a specific game type
+ * Deletes a single custom question by ID
  */
-export function getCustomQuestionsByGame(gameType: string): AnyQuestion[] {
-  const all = getCustomQuestions();
-  return all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
-}
-
-/**
- * Deletes a single custom question by ID from localStorage
- */
-export function deleteCustomQuestion(id: string): void {
+export async function deleteCustomQuestion(id: string): Promise<void> {
   if (!isClientSide()) return;
   try {
     const existing = getCustomQuestions();
     const updated = existing.filter((q) => q.id !== id);
-    window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(updated));
+
+    memoryQuestionsCache = updated;
+    await setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, updated);
+
+    if (typeof window.localStorage !== "undefined") {
+      try {
+        window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+    }
+
+    notifyQuestionsUpdated();
   } catch (err) {
     console.error("Failed to delete custom question:", err);
   }
 }
 
 /**
- * Updates status of a custom question in localStorage
+ * Updates status of a custom question
  */
-export function updateCustomQuestionStatus(
+export async function updateCustomQuestionStatus(
   id: string,
   newStatus: "published" | "draft" | "review" | "archived"
-): void {
+): Promise<void> {
   if (!isClientSide()) return;
   try {
     const existing = getCustomQuestions();
     const updated = existing.map((q) => (q.id === id ? { ...q, status: newStatus } : q));
-    window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(updated));
+
+    memoryQuestionsCache = updated;
+    await setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, updated);
+
+    if (typeof window.localStorage !== "undefined") {
+      try {
+        window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+    }
+
+    notifyQuestionsUpdated();
   } catch (err) {
     console.error("Failed to update custom question status:", err);
   }
@@ -128,14 +273,30 @@ export function updateCustomQuestionStatus(
 /**
  * Clears all custom questions or questions of a specific game type
  */
-export function clearCustomQuestions(gameType?: string): void {
+export async function clearCustomQuestions(gameType?: string): Promise<void> {
   if (!isClientSide()) return;
-  if (!gameType) {
-    window.localStorage.removeItem(CUSTOM_QUESTIONS_STORAGE_KEY);
-  } else {
-    const existing = getCustomQuestions();
-    const updated = existing.filter((q) => q.game_type !== gameType);
-    window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(updated));
+  try {
+    if (!gameType) {
+      memoryQuestionsCache = [];
+      await deleteIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY);
+      if (typeof window.localStorage !== "undefined") {
+        window.localStorage.removeItem(CUSTOM_QUESTIONS_STORAGE_KEY);
+      }
+    } else {
+      const existing = getCustomQuestions();
+      const updated = existing.filter((q) => q.game_type !== gameType);
+      memoryQuestionsCache = updated;
+      await setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, updated);
+      if (typeof window.localStorage !== "undefined") {
+        try {
+          window.localStorage.setItem(CUSTOM_QUESTIONS_STORAGE_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+    }
+
+    notifyQuestionsUpdated();
+  } catch (err) {
+    console.error("Failed to clear custom questions:", err);
   }
 }
 

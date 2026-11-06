@@ -7,7 +7,7 @@ import { GameHeader } from "@/components/game-shared/GameHeader";
 import { QuestionPrompt } from "@/components/game-shared/QuestionPrompt";
 import { FeedbackPanel } from "@/components/game-shared/FeedbackPanel";
 import { recordGuestAnswer } from "@/lib/storage/guest-storage";
-import { getCustomQuestionsByGame } from "@/lib/storage/question-storage";
+import { loadCustomQuestionsByGameAsync } from "@/lib/storage/question-storage";
 import { MemoryFlipRenderer } from "@/games/memory-flip/MemoryFlipRenderer";
 import { MEMORY_FLIP_SAMPLE_QUESTIONS } from "@/games/memory-flip/sample-data";
 import type { MemoryFlipAnswer } from "@/games/memory-flip/adapter";
@@ -125,10 +125,17 @@ function GamePlayContent() {
   const [customPool, setCustomPool] = useState<unknown[]>([]);
 
   useEffect(() => {
-    const custom = getCustomQuestionsByGame(slug);
-    if (custom.length > 0) {
-      setCustomPool(custom);
-    }
+    const reload = () => {
+      loadCustomQuestionsByGameAsync(slug).then((custom) => {
+        if (custom.length > 0) {
+          setCustomPool(custom);
+        }
+      });
+    };
+
+    reload();
+    window.addEventListener("egh_questions_updated", reload);
+    return () => window.removeEventListener("egh_questions_updated", reload);
   }, [slug]);
 
   // 1. Raw pool
