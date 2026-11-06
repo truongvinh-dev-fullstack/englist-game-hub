@@ -6,6 +6,11 @@ import { Play, Layers, Filter, CheckCircle2, ChevronRight, Trophy } from "lucide
 import { loadCustomQuestionsByGameAsync } from "@/lib/storage/question-storage";
 import { getGameStageRecords, formatDuration, type StageRecord } from "@/lib/storage/game-record-storage";
 import type { AnyQuestion } from "@/lib/validations/content";
+import { MEMORY_FLIP_SAMPLE_QUESTIONS } from "@/games/memory-flip/sample-data";
+import { SENTENCE_BUILDER_SAMPLE_QUESTIONS } from "@/games/sentence-builder/sample-data";
+import { ERROR_DETECTIVE_SAMPLE_QUESTIONS } from "@/games/error-detective/sample-data";
+import { LISTEN_CHOOSE_SAMPLE_QUESTIONS } from "@/games/listen-choose/sample-data";
+import { ROLEPLAY_SAMPLE_QUESTIONS } from "@/games/roleplay/sample-data";
 import { cn } from "@/lib/utils";
 
 interface GameStageSelectorProps {
@@ -22,6 +27,28 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
   const [selectedStage, setSelectedStage] = useState<number>(1);
   const [stagePage, setStagePage] = useState<number>(0);
 
+  const basePool = useMemo(() => {
+    switch (slug) {
+      case "memory-flip":
+        return MEMORY_FLIP_SAMPLE_QUESTIONS;
+      case "sentence-builder":
+        return SENTENCE_BUILDER_SAMPLE_QUESTIONS;
+      case "error-detective":
+        return ERROR_DETECTIVE_SAMPLE_QUESTIONS;
+      case "listen-choose":
+        return LISTEN_CHOOSE_SAMPLE_QUESTIONS;
+      case "roleplay":
+        return ROLEPLAY_SAMPLE_QUESTIONS;
+      default:
+        return [];
+    }
+  }, [slug]);
+
+  // Use custom questions if available, otherwise fallback to base sample questions
+  const allAvailableQuestions = useMemo(() => {
+    return customQuestions.length > 0 ? customQuestions : (basePool as AnyQuestion[]);
+  }, [customQuestions, basePool]);
+
   useEffect(() => {
     setMounted(true);
 
@@ -32,10 +59,11 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
         setStageRecords(records);
 
         // Intelligently default to next uncompleted stage
+        const effectiveCount = questions.length > 0 ? questions.length : basePool.length;
         const completedStages = Object.keys(records).map(Number);
         if (completedStages.length > 0) {
           const highest = Math.max(...completedStages);
-          const totalS = Math.max(1, Math.ceil(questions.length / SESSION_SIZE));
+          const totalS = Math.max(1, Math.ceil(effectiveCount / SESSION_SIZE));
           const nextS = Math.min(highest + 1, totalS);
           setSelectedStage(nextS);
           const pageForStage = Math.floor((nextS - 1) / 8);
@@ -47,27 +75,31 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
     reload();
     window.addEventListener("egh_questions_updated", reload);
     return () => window.removeEventListener("egh_questions_updated", reload);
-  }, [slug]);
+  }, [slug, basePool]);
 
   // Extract unique topics / tags from questions
   const availableTopics = useMemo(() => {
-    if (customQuestions.length === 0) return [];
+    if (allAvailableQuestions.length === 0) return [];
     const tags = new Set<string>();
-    customQuestions.forEach((q) => {
+    allAvailableQuestions.forEach((q) => {
       const topicId = "topic_id" in q ? q.topic_id : undefined;
-      if (topicId && topicId !== "default") tags.add(topicId);
+      if (topicId && topicId !== "default" && topicId !== "00000000-0000-0000-0000-000000000001") {
+        tags.add(topicId);
+      }
       const conceptTags = q.concept_tags || [];
       conceptTags.forEach((t: string) => {
-        if (t && t.length > 1) tags.add(t);
+        if (t && t.length > 1 && t !== "listening" && t !== "vocabulary" && t !== "grammar" && t !== "speaking") {
+          tags.add(t);
+        }
       });
     });
     return Array.from(tags).slice(0, 8); // Top 8 relevant tags
-  }, [customQuestions]);
+  }, [allAvailableQuestions]);
 
   // Filter questions based on selected topic
   const filteredQuestions = useMemo(() => {
-    if (selectedTopic === "all") return customQuestions;
-    return customQuestions.filter((q) => {
+    if (selectedTopic === "all") return allAvailableQuestions;
+    return allAvailableQuestions.filter((q) => {
       const tags: string[] = q.concept_tags || [];
       const topicId: string = "topic_id" in q && q.topic_id ? String(q.topic_id) : "";
       return (
@@ -75,7 +107,7 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
         tags.some((t) => t.toLowerCase() === selectedTopic.toLowerCase())
       );
     });
-  }, [customQuestions, selectedTopic]);
+  }, [allAvailableQuestions, selectedTopic]);
 
   // Total stages (10 questions per stage)
   const totalStages = Math.max(1, Math.ceil(filteredQuestions.length / SESSION_SIZE));
@@ -95,21 +127,6 @@ export function GameStageSelector({ slug }: GameStageSelectorProps) {
         >
           <Play className="h-5 w-5 fill-white" aria-hidden="true" />
           <span>Bắt đầu chơi ngay</span>
-        </Link>
-      </div>
-    );
-  }
-
-  // If no custom questions, render standard play button
-  if (customQuestions.length === 0) {
-    return (
-      <div className="pt-2">
-        <Link
-          href={`/games/${slug}/play`}
-          className="inline-flex min-h-touch items-center gap-2 rounded-2xl bg-primary px-7 py-3.5 text-base font-bold text-white shadow-md hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-primary transition-all"
-        >
-          <Play className="h-5 w-5 fill-white" aria-hidden="true" />
-          <span>Bắt đầu chơi ngay (Ván mẫu)</span>
         </Link>
       </div>
     );

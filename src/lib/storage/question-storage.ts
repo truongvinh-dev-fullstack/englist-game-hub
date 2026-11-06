@@ -25,6 +25,7 @@ const CUSTOM_QUESTIONS_STORAGE_KEY = "egh_custom_questions_v1";
 // In-memory cache for fast synchronous access
 let memoryQuestionsCache: StoredQuestionItem[] | null = null;
 let isIdbLoadingPromise: Promise<StoredQuestionItem[]> | null = null;
+let isIdbHydrated = false;
 
 function isClientSide(): boolean {
   return typeof window !== "undefined";
@@ -47,8 +48,8 @@ function notifyQuestionsUpdated() {
 export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> {
   if (!isClientSide()) return [];
 
-  // Return existing memory cache if already populated
-  if (memoryQuestionsCache !== null) {
+  // Return existing memory cache ONLY if IndexedDB has already hydrated it
+  if (isIdbHydrated && memoryQuestionsCache !== null) {
     return memoryQuestionsCache;
   }
 
@@ -63,6 +64,7 @@ export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> 
       const idbData = await getIdbItem<StoredQuestionItem[]>(CUSTOM_QUESTIONS_STORAGE_KEY);
       if (Array.isArray(idbData) && idbData.length > 0) {
         memoryQuestionsCache = idbData;
+        isIdbHydrated = true;
         notifyQuestionsUpdated();
         return idbData;
       }
@@ -74,7 +76,8 @@ export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> 
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
             memoryQuestionsCache = parsed;
-            // Also sync to IndexedDB for future capacity
+            isIdbHydrated = true;
+            // Also sync to IndexedDB for future high-capacity persistence
             setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, parsed).catch(() => {});
             notifyQuestionsUpdated();
             return parsed;
@@ -82,12 +85,14 @@ export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> 
         }
       }
 
-      memoryQuestionsCache = [];
-      return [];
+      memoryQuestionsCache = memoryQuestionsCache || [];
+      isIdbHydrated = true;
+      return memoryQuestionsCache;
     } catch (err) {
       console.warn("Failed to load questions from storage:", err);
-      memoryQuestionsCache = [];
-      return [];
+      memoryQuestionsCache = memoryQuestionsCache || [];
+      isIdbHydrated = true;
+      return memoryQuestionsCache;
     } finally {
       isIdbLoadingPromise = null;
     }
@@ -193,6 +198,7 @@ export async function saveCustomQuestions(
 
     // 1. Update memory cache immediately
     memoryQuestionsCache = merged;
+    isIdbHydrated = true;
 
     // 2. Persist to IndexedDB (handles large datasets 3,000+ items seamlessly)
     await setIdbItem(CUSTOM_QUESTIONS_STORAGE_KEY, merged);
