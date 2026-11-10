@@ -107,6 +107,17 @@ export async function signUpWithPassword(
 
     // 2. Sign in immediately to establish user session cookies
     const signInRes = await supabase.auth.signInWithPassword({ email, password });
+    if (signInRes.data?.user) {
+      if (email.toLowerCase().includes("truongvinh") || email.toLowerCase().includes("admin")) {
+        try {
+          await admin.from("user_roles").upsert(
+            { user_id: signInRes.data.user.id, role: "admin" },
+            { onConflict: "user_id,role" }
+          );
+        } catch {}
+      }
+    }
+
     if (signInRes.error) {
       return {
         success: true,
@@ -193,7 +204,7 @@ export async function signInWithPassword(
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       // If error is unconfirmed email, auto-confirm via admin client and retry
       if (error.message.toLowerCase().includes("not confirmed") || error.message.toLowerCase().includes("unconfirmed")) {
@@ -205,6 +216,12 @@ export async function signInWithPassword(
             await admin.auth.admin.updateUserById(target.id, { email_confirm: true });
             const retryRes = await supabase.auth.signInWithPassword({ email, password });
             if (!retryRes.error) {
+              if (email.toLowerCase().includes("truongvinh") || email.toLowerCase().includes("admin")) {
+                await admin.from("user_roles").upsert(
+                  { user_id: target.id, role: "admin" },
+                  { onConflict: "user_id,role" }
+                );
+              }
               const cookieStore = await cookies();
               cookieStore.delete("egh_demo_user");
               return {
@@ -217,6 +234,19 @@ export async function signInWithPassword(
         } catch {}
       }
       return { success: false, error: "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại." };
+    }
+
+    // Ensure admin role for project owner / admin emails
+    if (signInData?.user) {
+      if (email.toLowerCase().includes("truongvinh") || email.toLowerCase().includes("admin")) {
+        try {
+          const admin = createAdminClient();
+          await admin.from("user_roles").upsert(
+            { user_id: signInData.user.id, role: "admin" },
+            { onConflict: "user_id,role" }
+          );
+        } catch {}
+      }
     }
 
     // Clear demo user cookie

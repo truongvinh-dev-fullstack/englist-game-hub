@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
               { href: "/admin/questions", label: "Quản lý câu hỏi", icon: HelpCircle },
               { href: "/admin/topics", label: "Quản lý chủ đề", icon: BookOpen },
-              { href: "/admin/import", label: "Nhập dữ liệu CSV", icon: FileSpreadsheet },
+              { href: "/admin/import", label: "Nhập dữ liệu Excel / CSV", icon: FileSpreadsheet },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
