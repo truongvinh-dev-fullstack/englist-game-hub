@@ -102,11 +102,44 @@ export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> 
 }
 
 /**
- * Asynchronously returns custom questions for a specific game type
+ * Fetch questions from Supabase Cloud API and cache them locally in IndexedDB
+ */
+export async function fetchCloudQuestionsByGame(gameType: string): Promise<AnyQuestion[]> {
+  if (!isClientSide()) return [];
+  try {
+    const res = await fetch(`/api/questions?game=${encodeURIComponent(gameType)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (Array.isArray(data.questions) && data.questions.length > 0) {
+      // Merge into local cache so future reads are instant
+      await saveCustomQuestions(data.questions);
+      return data.questions as AnyQuestion[];
+    }
+  } catch {
+    // Cloud fetch error or offline - silently ignore
+  }
+  return [];
+}
+
+/**
+ * Asynchronously returns custom questions for a specific game type.
+ * Checks IndexedDB/memory cache first; if empty, fetches from Supabase Cloud API.
  */
 export async function loadCustomQuestionsByGameAsync(gameType: string): Promise<AnyQuestion[]> {
   const all = await loadCustomQuestionsAsync();
-  return all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
+  const localQuestions = all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
+
+  if (localQuestions.length > 0) {
+    return localQuestions;
+  }
+
+  // If local cache has no questions for this game, try fetching from Supabase Cloud
+  const cloud = await fetchCloudQuestionsByGame(gameType);
+  if (cloud.length > 0) {
+    return cloud;
+  }
+
+  return [];
 }
 
 /**

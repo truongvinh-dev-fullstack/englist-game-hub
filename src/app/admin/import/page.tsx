@@ -147,11 +147,31 @@ export default function AdminImportPage() {
     setIsSaving(true);
     setSaveError(null);
     try {
+      // 1. Save to Supabase Cloud Database via API so all devices receive the questions
+      let cloudSaved = false;
+      try {
+        const res = await fetch("/api/questions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questions: excelResult.validQuestions }),
+        });
+        if (res.ok) {
+          cloudSaved = true;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          console.warn("Lưu lên Supabase có lưu ý:", errData.error);
+        }
+      } catch (cloudErr) {
+        console.warn("Lỗi khi kết nối Cloud API:", cloudErr);
+      }
+
+      // 2. Also save to high-capacity IndexedDB for instant local access and offline mode
       const saved = await saveCustomQuestions(excelResult.validQuestions);
-      if (saved && saved.length > 0) {
+
+      if ((saved && saved.length > 0) || cloudSaved) {
         setIsImported(true);
       } else {
-        setSaveError("Không thể lưu câu hỏi vào cơ sở dữ liệu trình duyệt.");
+        setSaveError("Không thể lưu câu hỏi vào cơ sở dữ liệu.");
       }
     } catch (err) {
       setSaveError(
