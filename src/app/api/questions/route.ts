@@ -79,6 +79,15 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
+    // Ensure default topic exists to prevent foreign key errors
+    await admin.from("topics").upsert({
+      id: DEFAULT_TOPIC_ID,
+      slug: "general",
+      title_vi: "Tiếng Anh Giao Tiếp Công Sở Cơ Bản",
+      description: "Bộ câu hỏi mặc định",
+      status: "published",
+    });
+
     const dbRows = questions.map((q: Record<string, unknown>) => {
       const gameType = ((q.game_type as string) || "memory-flip") as GameType;
       const topicId = typeof q.topic_id === "string" && q.topic_id.length === 36 ? q.topic_id : DEFAULT_TOPIC_ID;

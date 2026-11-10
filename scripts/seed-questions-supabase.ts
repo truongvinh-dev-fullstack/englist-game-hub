@@ -1,5 +1,24 @@
 import fs from "fs";
 import path from "path";
+
+// Ensure .env.local is loaded in standalone script
+if (fs.existsSync(".env.local")) {
+  const content = fs.readFileSync(".env.local", "utf8");
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith("#")) {
+      const idx = trimmed.indexOf("=");
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        const val = trimmed.slice(idx + 1).trim();
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+}
+
 import { parseGameExcelOrCsv, type SupportedGameType } from "../src/lib/services/excel-game-importer.service";
 import { createAdminClient } from "../src/lib/supabase/service-role";
 import type { GameType, DifficultyLevel, SkillType, Json } from "../src/lib/types/database.types";
@@ -26,6 +45,15 @@ async function seedAllQuestions() {
     process.exit(1);
   }
   console.log("Kết nối Supabase thành công! Các games khả dụng:", games.map((g) => g.slug).join(", "));
+
+  // Ensure default topic exists
+  await adminClient.from("topics").upsert({
+    id: DEFAULT_TOPIC_ID,
+    slug: "general",
+    title_vi: "Tiếng Anh Giao Tiếp Công Sở Cơ Bản",
+    description: "Bộ câu hỏi tổng hợp cho người đi làm",
+    status: "published",
+  });
 
   let grandTotal = 0;
 
