@@ -32,14 +32,70 @@ export function Header({
   const [displayXP, setDisplayXP] = React.useState<number>(userXP);
 
   React.useEffect(() => {
-    if (typeof document === "undefined") return;
-    const match = document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"));
-    if (match && match[1]) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(match[1]));
-        setClientUser({ name: parsed.display_name || parsed.email });
-      } catch {}
+    let unsubscribe: (() => void) | undefined;
+
+    // 1. Check Supabase Auth session first
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          const name =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split("@")[0] ||
+            "Học viên";
+          setClientUser({ name });
+          return;
+        }
+
+        // 2. Fallback to demo cookie if no Supabase user
+        if (typeof document !== "undefined") {
+          const match = document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"));
+          if (match && match[1]) {
+            try {
+              const parsed = JSON.parse(decodeURIComponent(match[1]));
+              setClientUser({ name: parsed.display_name || parsed.email });
+            } catch {}
+          }
+        }
+      });
+
+      // 3. Listen for Supabase auth state changes in real time
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          const name =
+            session.user.user_metadata?.full_name ||
+            session.user.user_metadata?.name ||
+            session.user.email?.split("@")[0] ||
+            "Học viên";
+          setClientUser({ name });
+        } else {
+          // If signed out, check demo cookie
+          const match =
+            typeof document !== "undefined"
+              ? document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"))
+              : null;
+          if (match && match[1]) {
+            try {
+              const parsed = JSON.parse(decodeURIComponent(match[1]));
+              setClientUser({ name: parsed.display_name || parsed.email });
+            } catch {}
+          } else {
+            setClientUser(null);
+          }
+        }
+      });
+
+      unsubscribe = () => {
+        authListener?.subscription?.unsubscribe();
+      };
+    } catch {
+      // Supabase client error or missing config
     }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   React.useEffect(() => {
@@ -58,7 +114,7 @@ export function Header({
     };
   }, [userXP]);
 
-  const effectiveIsGuest = isGuest && !clientUser;
+  const effectiveIsGuest = isGuest && !clientUser && !userName;
   const effectiveUserName = userName || clientUser?.name;
 
   const handleSignOut = async () => {

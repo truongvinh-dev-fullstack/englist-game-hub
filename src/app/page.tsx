@@ -21,6 +21,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { GameCard } from "@/components/ui/GameCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import {
   getUserTotalXP,
   getDailyGoalProgress,
@@ -97,16 +98,51 @@ export default function HomePage() {
   const [clientUserName, setClientUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    // Read user session from cookie if available
-    if (typeof document !== "undefined") {
-      const match = document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"));
-      if (match && match[1]) {
-        try {
-          const parsed = JSON.parse(decodeURIComponent(match[1]));
-          setClientUserName(parsed.display_name || parsed.email);
-        } catch {}
-      }
-    }
+    let unsubscribe: (() => void) | undefined;
+
+    // 1. Check Supabase Auth user
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          const name =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split("@")[0] ||
+            "Học viên";
+          setClientUserName(name);
+          return;
+        }
+
+        // 2. Fallback to demo cookie
+        if (typeof document !== "undefined") {
+          const match = document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"));
+          if (match && match[1]) {
+            try {
+              const parsed = JSON.parse(decodeURIComponent(match[1]));
+              setClientUserName(parsed.display_name || parsed.email);
+            } catch {}
+          }
+        }
+      });
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          const name =
+            session.user.user_metadata?.full_name ||
+            session.user.user_metadata?.name ||
+            session.user.email?.split("@")[0] ||
+            "Học viên";
+          setClientUserName(name);
+        } else {
+          setClientUserName(null);
+        }
+      });
+
+      unsubscribe = () => {
+        authListener?.subscription?.unsubscribe();
+      };
+    } catch {}
 
     const refreshData = () => {
       setUserXp(getUserTotalXP());
@@ -119,13 +155,14 @@ export default function HomePage() {
     window.addEventListener("storage", refreshData);
 
     return () => {
+      if (unsubscribe) unsubscribe();
       window.removeEventListener("egh_progress_updated", refreshData);
       window.removeEventListener("storage", refreshData);
     };
   }, []);
 
   return (
-    <AppShell isGuest={!clientUserName} userXP={userXp}>
+    <AppShell isGuest={!clientUserName} userXP={userXp} userName={clientUserName || undefined}>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
         {/* Hero Section — Vibrant, high-contrast, gamified banner */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 p-6 sm:p-10 lg:p-12 text-white shadow-xl shadow-indigo-900/20 border border-indigo-500/30">
