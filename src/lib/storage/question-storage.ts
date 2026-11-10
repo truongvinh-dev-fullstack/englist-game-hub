@@ -102,44 +102,50 @@ export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> 
 }
 
 /**
- * Fetch questions from Supabase Cloud API and cache them locally in IndexedDB
+ * Fetch questions from Supabase Cloud API and synchronize them locally in IndexedDB.
+ * Returns the array of questions if the cloud request succeeded, or null if network failed.
  */
-export async function fetchCloudQuestionsByGame(gameType: string): Promise<AnyQuestion[]> {
-  if (!isClientSide()) return [];
+export async function fetchCloudQuestionsByGame(gameType: string): Promise<AnyQuestion[] | null> {
+  if (!isClientSide()) return null;
   try {
     const res = await fetch(`/api/questions?game=${encodeURIComponent(gameType)}`);
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     const data = await res.json();
-    if (Array.isArray(data.questions) && data.questions.length > 0) {
-      // Merge into local cache so future reads are instant
-      await saveCustomQuestions(data.questions);
-      return data.questions as AnyQuestion[];
+    if (Array.isArray(data.questions)) {
+      if (data.questions.length > 0) {
+        // Save and overwrite local cache with official Supabase questions
+        await saveCustomQuestions(data.questions, true);
+        return data.questions as AnyQuestion[];
+      } else {
+        // Supabase has 0 questions for this game -> clear any stale local cache for this game
+        await clearCustomQuestions(gameType);
+        return [];
+      }
     }
   } catch {
-    // Cloud fetch error or offline - silently ignore
+    // Cloud fetch error or offline - silently return null to trigger offline fallback
   }
-  return [];
+  return null;
 }
 
 /**
- * Asynchronously returns custom questions for a specific game type.
- * Checks IndexedDB/memory cache first; if empty, fetches from Supabase Cloud API.
+ * Asynchronously returns questions for a specific game type.
+ * Cloud-First Strategy:
+ * 1. Checks Supabase Cloud Database first to ensure 100% multi-device consistency.
+ * 2. If Cloud responds (with questions or empty), uses Supabase as the single source of truth.
+ * 3. If offline or Cloud is unreachable, seamlessly falls back to local IndexedDB cache.
  */
 export async function loadCustomQuestionsByGameAsync(gameType: string): Promise<AnyQuestion[]> {
-  const all = await loadCustomQuestionsAsync();
-  const localQuestions = all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
-
-  if (localQuestions.length > 0) {
-    return localQuestions;
-  }
-
-  // If local cache has no questions for this game, try fetching from Supabase Cloud
+  // 1. Always prioritize Supabase Cloud Database when online
   const cloud = await fetchCloudQuestionsByGame(gameType);
-  if (cloud.length > 0) {
+  if (cloud !== null) {
     return cloud;
   }
 
-  return [];
+  // 2. Offline fallback: read from local IndexedDB cache if network is unavailable
+  const all = await loadCustomQuestionsAsync();
+  const localQuestions = all.filter((q) => q.game_type === gameType) as unknown as AnyQuestion[];
+  return localQuestions;
 }
 
 /**

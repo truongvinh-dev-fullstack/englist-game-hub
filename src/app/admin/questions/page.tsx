@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Clock,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import { MEMORY_FLIP_SAMPLE_QUESTIONS } from "@/games/memory-flip/sample-data";
 import { SENTENCE_BUILDER_SAMPLE_QUESTIONS } from "@/games/sentence-builder/sample-data";
@@ -20,6 +21,7 @@ import {
   loadCustomQuestionsAsync,
   deleteCustomQuestion,
   updateCustomQuestionStatus,
+  clearCustomQuestions,
 } from "@/lib/storage/question-storage";
 
 interface AdminQuestionItem {
@@ -161,13 +163,28 @@ export default function AdminQuestionsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              if (confirm("Bạn có muốn dọn sạch bộ nhớ đệm cục bộ và đồng bộ lại chuẩn xác từ Supabase Cloud không?")) {
+                await clearCustomQuestions();
+                window.location.reload();
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
+            title="Dọn sạch cache và đồng bộ lại từ Supabase"
+          >
+            <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+            <span>Làm mới từ Supabase</span>
+          </button>
+
           <Link
             href="/admin/import"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
           >
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-            <span>Nhập CSV</span>
+            <span>Nhập Excel / CSV</span>
           </Link>
 
           <button
