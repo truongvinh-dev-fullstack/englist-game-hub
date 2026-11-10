@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/service-role";
 import {
   emailLoginSchema,
   signUpSchema,
@@ -18,7 +19,7 @@ export interface AuthActionResult {
 
 /**
  * Signs up a new learner account with email, password, and optional full name.
- * Fallback-friendly: operates seamlessly in both live Supabase and local demo environments.
+ * Automatically verifies email using admin API so learners can access immediately without friction.
  */
 export async function signUpWithPassword(
   _prevState: AuthActionResult | null,
@@ -70,30 +71,52 @@ export async function signUpWithPassword(
   // Live Supabase integration
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.auth.signUp({
+    const admin = createAdminClient();
+
+    // 1. Create verified user via admin API so no email verification blocker stops the user
+    const { error: adminCreateErr } = await admin.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          full_name: displayName,
-        },
+      email_confirm: true,
+      user_metadata: {
+        full_name: displayName,
       },
     });
 
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    // Try signing in immediately if email confirmation is not enforced
-    if (!data.session) {
-      const signInRes = await supabase.auth.signInWithPassword({ email, password });
-      if (signInRes.error) {
+    if (adminCreateErr) {
+      const errLower = adminCreateErr.message.toLowerCase();
+      if (errLower.includes("already registered") || errLower.includes("already exists")) {
         return {
-          success: true,
-          message: "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.",
+          success: false,
+          error: "Email này đã được đăng ký tài khoản. Vui lòng chuyển sang tab 'Đăng nhập' để vào học.",
         };
       }
+
+      // Fallback to standard signUp
+      const { error: signUpErr } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: displayName },
+        },
+      });
+      if (signUpErr) {
+        return { success: false, error: signUpErr.message };
+      }
     }
+
+    // 2. Sign in immediately to establish user session cookies
+    const signInRes = await supabase.auth.signInWithPassword({ email, password });
+    if (signInRes.error) {
+      return {
+        success: true,
+        message: "Đăng ký thành công! Vui lòng chuyển sang tab Đăng nhập để vào học.",
+      };
+    }
+
+    // Clear any leftover demo user cookie
+    const cookieStore = await cookies();
+    cookieStore.delete("egh_demo_user");
 
     return {
       success: true,
@@ -101,7 +124,6 @@ export async function signUpWithPassword(
       redirectUrl: "/games",
     };
   } catch (err) {
-    // If Supabase live fails or unreachable, fallback to local session to not block the user
     console.warn("Supabase auth signUp fallback to local session:", err);
     const cookieStore = await cookies();
     const demoUser = {
@@ -173,8 +195,34 @@ export async function signInWithPassword(
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      return { success: false, error: "Email hoặc mật khẩu không chính xác." };
+      // If error is unconfirmed email, auto-confirm via admin client and retry
+      if (error.message.toLowerCase().includes("not confirmed") || error.message.toLowerCase().includes("unconfirmed")) {
+        try {
+          const admin = createAdminClient();
+          const { data: usersData } = await admin.auth.admin.listUsers();
+          const target = usersData?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+          if (target) {
+            await admin.auth.admin.updateUserById(target.id, { email_confirm: true });
+            const retryRes = await supabase.auth.signInWithPassword({ email, password });
+            if (!retryRes.error) {
+              const cookieStore = await cookies();
+              cookieStore.delete("egh_demo_user");
+              return {
+                success: true,
+                message: "Đăng nhập thành công!",
+                redirectUrl: "/games",
+              };
+            }
+          }
+        } catch {}
+      }
+      return { success: false, error: "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại." };
     }
+
+    // Clear demo user cookie
+    const cookieStore = await cookies();
+    cookieStore.delete("egh_demo_user");
+
     return {
       success: true,
       message: "Đăng nhập thành công!",

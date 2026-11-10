@@ -58,6 +58,24 @@ function AuthFormContent() {
   // Quick 1-click state
   const [isQuickPending, setIsQuickPending] = useState(false);
   const [quickError, setQuickError] = useState<string | null>(null);
+  const [demoUserNotice, setDemoUserNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const match = document.cookie.match(new RegExp("(?:^|; )egh_demo_user=([^;]*)"));
+    if (match && match[1]) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(match[1]));
+        setDemoUserNotice(parsed.display_name || parsed.email);
+      } catch {}
+    }
+  }, []);
+
+  const handleClearDemoSession = () => {
+    document.cookie = "egh_demo_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setDemoUserNotice(null);
+    window.location.reload();
+  };
 
   // Handle auto redirect on successful registration
   useEffect(() => {
@@ -131,6 +149,22 @@ function AuthFormContent() {
 
       {/* Card Container */}
       <div className="rounded-3xl border border-slate-200/90 bg-surface p-6 sm:p-8 shadow-xs">
+        {/* Demo User Notice Banner */}
+        {demoUserNotice && (
+          <div className="mb-5 rounded-2xl bg-amber-50 border border-amber-200/90 p-3 text-xs text-amber-950 flex items-center justify-between gap-2 shadow-xs">
+            <span>
+              Đang ở phiên tạm: <strong>{demoUserNotice}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={handleClearDemoSession}
+              className="font-bold text-red-600 hover:text-red-700 hover:underline shrink-0"
+            >
+              Thoát ra
+            </button>
+          </div>
+        )}
+
         {/* Tab Switcher */}
         <div className="flex rounded-2xl bg-slate-100 p-1 mb-6">
           <button

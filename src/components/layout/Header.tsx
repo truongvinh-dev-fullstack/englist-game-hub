@@ -3,10 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gamepad2, User } from "lucide-react";
+import { Gamepad2, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { XPBadge } from "@/components/ui/XPBadge";
 import { getUserTotalXP } from "@/lib/storage/progress-sync";
+import { createClient } from "@/lib/supabase/client";
 
 export interface HeaderProps {
   userXP?: number;
@@ -59,6 +60,18 @@ export function Header({
 
   const effectiveIsGuest = isGuest && !clientUser;
   const effectiveUserName = userName || clientUser?.name;
+
+  const handleSignOut = async () => {
+    try {
+      // Clear demo cookie
+      document.cookie = "egh_demo_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      // Sign out Supabase auth
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {}
+    setClientUser(null);
+    window.location.href = "/login";
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-sm">
@@ -133,18 +146,30 @@ export function Header({
               </Link>
             </div>
           ) : (
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 transition-colors"
-              aria-label="Trang cá nhân của bạn"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-sm">
-                {effectiveUserName ? effectiveUserName.charAt(0).toUpperCase() : <User size={16} />}
-              </div>
-              <span className="hidden lg:inline text-sm font-bold text-slate-800">
-                {effectiveUserName || "Học viên"}
-              </span>
-            </Link>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 transition-colors"
+                title="Xem trang cá nhân"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-sm">
+                  {effectiveUserName ? effectiveUserName.charAt(0).toUpperCase() : <User size={16} />}
+                </div>
+                <span className="hidden sm:inline text-xs sm:text-sm font-bold text-slate-800 max-w-[130px] truncate">
+                  {effectiveUserName || "Học viên"}
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex min-h-touch items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors shadow-xs"
+                aria-label="Đăng xuất khỏi tài khoản"
+                title="Đăng xuất tài khoản"
+              >
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden md:inline">Đăng xuất</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
