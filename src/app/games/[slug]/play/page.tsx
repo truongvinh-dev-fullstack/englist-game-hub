@@ -7,7 +7,10 @@ import { GameHeader } from "@/components/game-shared/GameHeader";
 import { QuestionPrompt } from "@/components/game-shared/QuestionPrompt";
 import { FeedbackPanel } from "@/components/game-shared/FeedbackPanel";
 import { recordGuestAnswer } from "@/lib/storage/guest-storage";
-import { loadCustomQuestionsByGameAsync } from "@/lib/storage/question-storage";
+import {
+  loadCustomQuestionsByGameAsync,
+  getCustomQuestionsByGame,
+} from "@/lib/storage/question-storage";
 import { MemoryFlipRenderer } from "@/games/memory-flip/MemoryFlipRenderer";
 import { MEMORY_FLIP_SAMPLE_QUESTIONS } from "@/games/memory-flip/sample-data";
 import type { MemoryFlipAnswer } from "@/games/memory-flip/adapter";
@@ -122,15 +125,38 @@ function GamePlayContent() {
     ? ROLEPLAY_SAMPLE_QUESTIONS
     : DEFAULT_SAMPLE_QUESTIONS;
 
-  const [customPool, setCustomPool] = useState<unknown[]>([]);
+  const [customPool, setCustomPool] = useState<unknown[]>(() => {
+    if (typeof window !== "undefined") {
+      const existing = getCustomQuestionsByGame(slug);
+      if (existing.length > 0) return existing;
+    }
+    return [];
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const existing = getCustomQuestionsByGame(slug);
+      return existing.length === 0;
+    }
+    return true;
+  });
 
   useEffect(() => {
     let isMounted = true;
-    loadCustomQuestionsByGameAsync(slug).then((custom) => {
-      if (isMounted && custom.length > 0) {
-        setCustomPool(custom);
-      }
-    });
+    loadCustomQuestionsByGameAsync(slug)
+      .then((custom) => {
+        if (isMounted) {
+          if (custom.length > 0) {
+            setCustomPool(custom);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
     return () => {
       isMounted = false;
     };
@@ -332,6 +358,19 @@ function GamePlayContent() {
   const handleExit = () => {
     router.push("/games");
   };
+
+  if (isLoading) {
+    return (
+      <AppShell hideHeader={true} hideBottomNav={true}>
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-9 w-9 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+            <p className="text-sm font-semibold text-slate-600">Đang chuẩn bị màn chơi...</p>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell hideHeader={true} hideBottomNav={true}>

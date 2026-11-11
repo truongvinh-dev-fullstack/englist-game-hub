@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Play, Layers, Filter, CheckCircle2, ChevronRight, Trophy } from "lucide-react";
-import { loadCustomQuestionsByGameAsync } from "@/lib/storage/question-storage";
+import {
+  loadCustomQuestionsByGameAsync,
+  getCustomQuestionsByGame,
+} from "@/lib/storage/question-storage";
 import { getGameStageRecords, formatDuration, type StageRecord } from "@/lib/storage/game-record-storage";
 import type { AnyQuestion } from "@/lib/validations/content";
 import { MEMORY_FLIP_SAMPLE_QUESTIONS } from "@/games/memory-flip/sample-data";
@@ -21,7 +24,12 @@ const SESSION_SIZE = 10;
 
 export function GameStageSelector({ slug }: GameStageSelectorProps) {
   const [mounted, setMounted] = useState(false);
-  const [customQuestions, setCustomQuestions] = useState<AnyQuestion[]>([]);
+  const [customQuestions, setCustomQuestions] = useState<AnyQuestion[]>(() => {
+    if (typeof window !== "undefined") {
+      return getCustomQuestionsByGame(slug);
+    }
+    return [];
+  });
   const [stageRecords, setStageRecords] = useState<Record<number, StageRecord>>({});
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
   const [selectedStage, setSelectedStage] = useState<number>(1);
