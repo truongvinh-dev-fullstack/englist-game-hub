@@ -125,17 +125,15 @@ function GamePlayContent() {
   const [customPool, setCustomPool] = useState<unknown[]>([]);
 
   useEffect(() => {
-    const reload = () => {
-      loadCustomQuestionsByGameAsync(slug).then((custom) => {
-        if (custom.length > 0) {
-          setCustomPool(custom);
-        }
-      });
+    let isMounted = true;
+    loadCustomQuestionsByGameAsync(slug).then((custom) => {
+      if (isMounted && custom.length > 0) {
+        setCustomPool(custom);
+      }
+    });
+    return () => {
+      isMounted = false;
     };
-
-    reload();
-    window.addEventListener("egh_questions_updated", reload);
-    return () => window.removeEventListener("egh_questions_updated", reload);
   }, [slug]);
 
   // 1. Raw pool
@@ -155,7 +153,7 @@ function GamePlayContent() {
     });
   }, [rawPool, selectedTopic]);
 
-  // 3. Slice by Stage / Session Size and randomize questions in session
+  // 3. Slice by Stage / Session Size (Deterministic, stable sequence)
   const questionPool = useMemo(() => {
     let pool = topicFilteredPool;
     if (topicFilteredPool.length > sessionLimit) {
@@ -163,13 +161,7 @@ function GamePlayContent() {
       const paged = topicFilteredPool.slice(startIndex, startIndex + sessionLimit);
       pool = paged.length > 0 ? paged : topicFilteredPool.slice(0, sessionLimit);
     }
-    // Shuffle questions in session so they do not follow fixed table order
-    const list = [...pool];
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
-    return list;
+    return pool;
   }, [topicFilteredPool, stage, sessionLimit]);
 
   const currentQuestion = (questionPool[currentIndex] || questionPool[0]) as (typeof baseQuestionPool)[0];

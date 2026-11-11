@@ -101,24 +101,59 @@ export async function loadCustomQuestionsAsync(): Promise<StoredQuestionItem[]> 
   return isIdbLoadingPromise;
 }
 
+interface CachedCloudGame {
+  questions: AnyQuestion[];
+  timestamp: number;
+}
+const cloudGameCache = new Map<string, CachedCloudGame>();
+const CLOUD_CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+
+export function invalidateCloudQuestionsCache(gameType?: string): void {
+  if (gameType) {
+    cloudGameCache.delete(gameType);
+  } else {
+    cloudGameCache.clear();
+  }
+}
+
 /**
  * Fetch questions from Supabase Cloud API and synchronize them locally in IndexedDB.
  * Returns the array of questions if the cloud request succeeded, or null if network failed.
  */
-export async function fetchCloudQuestionsByGame(gameType: string): Promise<AnyQuestion[] | null> {
+export async function fetchCloudQuestionsByGame(
+  gameType: string,
+  force = false
+): Promise<AnyQuestion[] | null> {
   if (!isClientSide()) return null;
+
+  if (!force && cloudGameCache.has(gameType)) {
+    const cached = cloudGameCache.get(gameType)!;
+    if (Date.now() - cached.timestamp < CLOUD_CACHE_TTL_MS) {
+      return cached.questions;
+    }
+  }
+
   try {
     const res = await fetch(`/api/questions?game=${encodeURIComponent(gameType)}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data.questions)) {
       if (data.questions.length > 0) {
-        // Save and overwrite local cache with official Supabase questions
-        await saveCustomQuestions(data.questions, true);
+        cloudGameCache.set(gameType, {
+          questions: data.questions as AnyQuestion[],
+          timestamp: Date.now(),
+        });
+        // Save and overwrite local cache with official Supabase questions quietly (emitEvent = false)
+        // to prevent infinite event loops with listeners
+        await saveCustomQuestions(data.questions, true, false);
         return data.questions as AnyQuestion[];
       } else {
-        // Supabase has 0 questions for this game -> clear any stale local cache for this game
-        await clearCustomQuestions(gameType);
+        cloudGameCache.set(gameType, {
+          questions: [],
+          timestamp: Date.now(),
+        });
+        // Supabase has 0 questions for this game -> clear stale local cache quietly
+        await clearCustomQuestions(gameType, false);
         return [];
       }
     }
@@ -198,7 +233,8 @@ export function getCustomQuestionsByGame(gameType: string): AnyQuestion[] {
  */
 export async function saveCustomQuestions(
   newQuestions: AnyQuestion[],
-  overwrite = true
+  overwrite = true,
+  emitEvent = true
 ): Promise<StoredQuestionItem[]> {
   if (!isClientSide() || newQuestions.length === 0) return [];
 
@@ -254,8 +290,11 @@ export async function saveCustomQuestions(
       }
     }
 
-    // 4. Notify all components to re-render
-    notifyQuestionsUpdated();
+    // 4. Notify UI components only when explicitly requested (defaults to true for user actions)
+    if (emitEvent) {
+      invalidateCloudQuestionsCache();
+      notifyQuestionsUpdated();
+    }
 
     return merged;
   } catch (err) {
@@ -318,7 +357,10 @@ export async function updateCustomQuestionStatus(
 /**
  * Clears all custom questions or questions of a specific game type
  */
-export async function clearCustomQuestions(gameType?: string): Promise<void> {
+export async function clearCustomQuestions(
+  gameType?: string,
+  emitEvent = true
+): Promise<void> {
   if (!isClientSide()) return;
   try {
     if (!gameType) {
@@ -339,7 +381,10 @@ export async function clearCustomQuestions(gameType?: string): Promise<void> {
       }
     }
 
-    notifyQuestionsUpdated();
+    if (emitEvent) {
+      invalidateCloudQuestionsCache(gameType);
+      notifyQuestionsUpdated();
+    }
   } catch (err) {
     console.error("Failed to clear custom questions:", err);
   }
